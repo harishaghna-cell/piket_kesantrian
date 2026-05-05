@@ -75,6 +75,13 @@
 <body>
 
 <button class="toggle-btn" onclick="toggleMode()">⚙️ Admin</button>
+
+<div id="sound-overlay" style="position:fixed;inset:0;background:rgba(10,22,40,0.97);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.5rem;">
+  <img src="https://qiicxgolluczqsjxvxhp.supabase.co/storage/v1/object/public/videos/logo%20aim%20putih.png.png" style="height:100px;filter:brightness(0) invert(1);opacity:0.9;" />
+  <div style="font-size:18px;color:rgba(255,255,255,0.7);letter-spacing:0.05em;">Ma'had Tahfizh Al Qur'an Abdullah Ibnu Mas'ud</div>
+  <div style="font-size:14px;color:rgba(255,255,255,0.35);margin-top:0.5rem;">Sistem Jadwal Piket</div>
+  <button onclick="activateSound()" style="margin-top:1rem;background:#1D9E75;border:none;color:white;border-radius:12px;padding:16px 40px;font-size:18px;cursor:pointer;letter-spacing:0.05em;">🔊 Aktifkan Suara</button>
+</div>
 <div id="display-panel"></div>
 
 <div id="admin-panel">
