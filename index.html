@@ -27,7 +27,6 @@
     .tv-countdown { margin-top: 1.5rem; font-size: 14px; color: rgba(255,255,255,0.3); }
     .tv-countdown span { color: #9FE1CB; font-weight: 500; }
 
-    /* IDLE */
     .idle-wrap { position: relative; min-height: 100vh; overflow: hidden; background: #0a1628; }
     .idle-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 1s; }
     .idle-video.active { opacity: 1; }
@@ -43,7 +42,6 @@
     .idle-dot.active { background: #5DCAA5; }
     .idle-pesantren { position: absolute; bottom: 1.5rem; left: 50%; transform: translateX(-50%); font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; color: rgba(255,255,255,0.15); }
 
-    /* ADMIN */
     .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 10px; }
     .admin-title { font-size: 18px; font-weight: 500; color: white; }
     .admin-tabs { display: flex; gap: 8px; margin-bottom: 1.5rem; }
@@ -59,10 +57,9 @@
     .save-btn { background: #1D9E75; border: none; color: white; border-radius: 8px; padding: 10px 24px; font-size: 14px; cursor: pointer; width: 100%; margin-top: 0.5rem; }
     .status-msg { text-align: center; font-size: 13px; color: #5DCAA5; margin-top: 8px; min-height: 20px; }
     .toggle-btn { position: fixed; bottom: 1rem; right: 1rem; background: rgba(255,255,255,0.1); border: 0.5px solid rgba(255,255,255,0.2); color: white; border-radius: 8px; padding: 8px 16px; font-size: 13px; cursor: pointer; z-index: 99; }
-
     .content-block { background: #1a1a1a; border: 0.5px solid #333; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
     .content-block-title { font-size: 15px; font-weight: 500; margin-bottom: 1rem; }
-    .content-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
+    .content-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: flex-start; }
     .content-input { flex: 1; background: #111; border: 0.5px solid #333; border-radius: 8px; padding: 8px 12px; color: white; font-size: 13px; font-family: inherit; }
     .content-input-wide { width: 100%; background: #111; border: 0.5px solid #333; border-radius: 8px; padding: 8px 12px; color: white; font-size: 13px; font-family: inherit; margin-bottom: 8px; }
     .del-btn { background: #2a1a1a; border: 0.5px solid #553333; color: #ff6666; border-radius: 8px; padding: 7px 12px; cursor: pointer; font-size: 13px; flex-shrink: 0; }
@@ -100,7 +97,7 @@
       <button class="add-btn" onclick="addQuote()">+ Tambah nasehat</button>
     </div>
     <div class="content-block">
-      <div class="content-block-title">Video (Google Drive)</div>
+      <div class="content-block-title">Video (Supabase Storage)</div>
       <div id="videos-list"></div>
       <button class="add-btn" onclick="addVideo()">+ Tambah video</button>
     </div>
@@ -111,13 +108,13 @@
 
 <script>
   const SUPABASE_URL = 'https://qiicxgolluczqsjxvxhp.supabase.co';
-  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFpaWN4Z29sbHVjenFzanh2eGhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MTc1MTIsImV4cCI6MjA5MzQ5MzUxMn0.EBXJ_HtcDRgNO0rAxx5l196OyZgA2VdqTpu1ggpl03w';
+  const SUPABASE_KEY = 'GANTI_DENGAN_ANON_KEY_KAMU';
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   const SESI = [
-    { id: 'sarapan', nama: 'Sarapan pagi',  mulai: 7*60,      selesai: 7*60+30,  pengumuman: 7*60-10 },
-    { id: 'siang',   nama: 'Makan siang',   mulai: 12*60+30,  selesai: 13*60+30, pengumuman: 12*60+20 },
-    { id: 'malam',   nama: 'Makan malam',   mulai: 18*60,     selesai: 18*60+30, pengumuman: 17*60+50 },
+    { id: 'sarapan', nama: 'Sarapan pagi', mulai: 7*60,     selesai: 7*60+30,  pengumuman: 7*60-10 },
+    { id: 'siang',   nama: 'Makan siang',  mulai: 12*60+30, selesai: 13*60+30, pengumuman: 12*60+20 },
+    { id: 'malam',   nama: 'Makan malam',  mulai: 18*60,    selesai: 18*60+30, pengumuman: 17*60+50 },
   ];
   const SLOTS = 8;
 
@@ -130,12 +127,7 @@
   let videos = [];
   let idleIndex = 0;
   let idleTimer = null;
-
-  function gdriveDirect(url) {
-    const m = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
-    if (!m) return url;
-    return `https://drive.google.com/uc?export=download&id=${m[1]}`;
-  }
+  let idleBuilt = false;
 
   function weekKey(offset=0) {
     const d = new Date();
@@ -186,49 +178,30 @@
     const key = weekKey(0);
     const { data } = await sb.from('jadwal_piket').select('*').eq('week_key', key);
     cachedData = data;
-    const { data: konten } = await sb.from('jadwal_piket').select('*').eq('week_key', 'konten_idle').maybeSingle();
-    if (konten) {
-      try { quotes = JSON.parse(konten.sesi === 'quotes' ? konten.names : '[]'); } catch(e) {}
-    }
-    const { data: kv } = await sb.from('jadwal_piket').select('*').eq('week_key', 'konten_idle').eq('sesi', 'videos').maybeSingle();
-    if (kv) { try { videos = JSON.parse(kv.names); } catch(e) {} }
     const { data: kq } = await sb.from('jadwal_piket').select('*').eq('week_key', 'konten_idle').eq('sesi', 'quotes').maybeSingle();
-    if (kq) { try { quotes = JSON.parse(kq.names); } catch(e) {} }
+    if (kq) { try { quotes = JSON.parse(kq.names); } catch(e) { quotes = []; } }
+    const { data: kv } = await sb.from('jadwal_piket').select('*').eq('week_key', 'konten_idle').eq('sesi', 'videos').maybeSingle();
+    if (kv) { try { videos = JSON.parse(kv.names); } catch(e) { videos = []; } }
   }
 
-  function renderIdle() {
-    const now = new Date();
-    const timeStr = now.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
-    const dateStr = now.toLocaleDateString('id-ID', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
-
-    const hasVideos = videos.length > 0;
-    const hasQuotes = quotes.length > 0;
-    const totalSlides = (hasVideos ? videos.length : 0) + (hasQuotes ? quotes.length : 0);
-
-    if (!document.getElementById('idle-wrap')) {
-      document.getElementById('display-panel').innerHTML = `
-        <div class="idle-wrap" id="idle-wrap">
-          ${hasVideos ? videos.map((v,i) => `<video class="idle-video ${i===0?'active':''}" id="vid-${i}" src="${gdriveDirect(v.url)}" muted playsinline loop></video>`).join('') : ''}
-          <div class="idle-overlay"></div>
-          <div class="idle-content">
-            <div class="idle-clock" id="idle-clock">${timeStr}</div>
-            <div class="idle-date" id="idle-date">${dateStr}</div>
-            <div class="idle-quote" id="idle-quote"></div>
-            <div class="idle-dots" id="idle-dots"></div>
-          </div>
-          <div class="idle-pesantren">Pesantren — Sistem Jadwal Piket</div>
+  function buildIdle() {
+    const panel = document.getElementById('display-panel');
+    panel.innerHTML = `
+      <div class="idle-wrap" id="idle-wrap">
+        ${videos.map((v,i) => `<video class="idle-video" id="vid-${i}" src="${v.url}" muted playsinline></video>`).join('')}
+        <div class="idle-overlay"></div>
+        <div class="idle-content">
+          <div class="idle-clock" id="idle-clock"></div>
+          <div class="idle-date" id="idle-date"></div>
+          <div class="idle-quote" id="idle-quote"></div>
+          <div class="idle-dots" id="idle-dots"></div>
         </div>
-      `;
-      startIdleCarousel();
-    } else {
-      document.getElementById('idle-clock').textContent = timeStr;
-      document.getElementById('idle-date').textContent = dateStr;
-    }
-  }
-
-  function startIdleCarousel() {
-    if (idleTimer) clearInterval(idleTimer);
+        <div class="idle-pesantren">Pesantren — Sistem Jadwal Piket</div>
+      </div>
+    `;
+    idleBuilt = true;
     idleIndex = 0;
+    if (idleTimer) clearInterval(idleTimer);
     showIdleSlide();
     idleTimer = setInterval(showIdleSlide, 8000);
   }
@@ -242,30 +215,33 @@
     idleIndex = idleIndex % allItems.length;
     const item = allItems[idleIndex];
 
-    document.querySelectorAll('.idle-video').forEach((v,i) => {
-      v.classList.toggle('active', item.type === 'video' && videos[i]?.url === item.url);
-      if (item.type === 'video' && videos[i]?.url === item.url) v.play().catch(()=>{});
-      else v.pause();
+    document.querySelectorAll('.idle-video').forEach((el, i) => {
+      const isActive = item.type === 'video' && videos[i]?.url === item.url;
+      el.classList.toggle('active', isActive);
+      if (isActive) el.play().catch(()=>{});
+      else { el.pause(); el.currentTime = 0; }
     });
 
     const qEl = document.getElementById('idle-quote');
     if (qEl) {
-      if (item.type === 'quote') {
-        qEl.innerHTML = `
-          <div class="idle-quote-text">"${item.text}"</div>
-          ${item.author ? `<div class="idle-quote-author">— ${item.author}</div>` : ''}
-        `;
-      } else {
-        qEl.innerHTML = '';
-      }
+      qEl.innerHTML = item.type === 'quote' ? `
+        <div class="idle-quote-text">"${item.text}"</div>
+        ${item.author ? `<div class="idle-quote-author">— ${item.author}</div>` : ''}
+      ` : '';
     }
 
     const dots = document.getElementById('idle-dots');
-    if (dots) {
-      dots.innerHTML = allItems.map((_,i) => `<div class="idle-dot ${i===idleIndex?'active':''}"></div>`).join('');
-    }
+    if (dots) dots.innerHTML = allItems.map((_,i) => `<div class="idle-dot ${i===idleIndex?'active':''}"></div>`).join('');
 
     idleIndex++;
+  }
+
+  function updateIdleClock() {
+    const now = new Date();
+    const cl = document.getElementById('idle-clock');
+    const dt = document.getElementById('idle-date');
+    if (cl) cl.textContent = now.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+    if (dt) dt.textContent = now.toLocaleDateString('id-ID', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
   }
 
   function renderDisplay() {
@@ -277,10 +253,12 @@
     const panel = document.getElementById('display-panel');
 
     if (!sesi) {
-      renderIdle();
+      if (!idleBuilt) buildIdle();
+      else updateIdleClock();
       return;
     }
 
+    idleBuilt = false;
     if (idleTimer) { clearInterval(idleTimer); idleTimer = null; }
 
     const row = cachedData?.find(r => r.sesi === sesi.id);
@@ -362,7 +340,7 @@
 
     document.getElementById('videos-list').innerHTML = videos.map((v,i) => `
       <div class="content-row">
-        <input class="content-input" placeholder="Link Google Drive..." value="${v.url||''}" oninput="videos[${i}].url=this.value" />
+        <input class="content-input" placeholder="URL Supabase Storage..." value="${v.url||''}" oninput="videos[${i}].url=this.value" />
         <button class="del-btn" onclick="videos.splice(${i},1);renderKonten()">Hapus</button>
       </div>
     `).join('');
@@ -390,6 +368,7 @@
     await sb.from('jadwal_piket').upsert({ week_key: 'konten_idle', sesi: 'videos', names: JSON.stringify(videos) }, { onConflict: 'week_key,sesi' });
     msg.textContent = 'Tersimpan!';
     setTimeout(() => msg.textContent = '', 2000);
+    idleBuilt = false;
     await loadDisplay();
   }
 
