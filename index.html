@@ -12,19 +12,24 @@
     #display-panel { display: block; }
 
     .tv-wrap { padding: 2rem; min-height: 100vh; display: flex; flex-direction: column; }
-    .tv-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem; }
-    .tv-label { font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.4); }
-    .tv-clock { font-size: 64px; font-weight: 300; letter-spacing: 0.05em; }
-    .tv-date { font-size: 13px; color: rgba(255,255,255,0.4); margin-top: 4px; text-align: right; }
-    .tv-divider { border: none; border-top: 0.5px solid rgba(255,255,255,0.1); margin: 1.5rem 0; }
+    .tv-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+    .tv-logo { height: 56px; opacity: 0.9; filter: brightness(0) invert(1); }
+    .tv-right { text-align: right; }
+    .tv-clock { font-size: 56px; font-weight: 200; letter-spacing: 0.05em; }
+    .tv-date { font-size: 13px; color: rgba(255,255,255,0.4); margin-top: 4px; }
+    .tv-divider { border: none; border-top: 0.5px solid rgba(255,255,255,0.1); margin-bottom: 1.5rem; }
     .tv-sesi-badge { display: inline-block; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #5DCAA5; margin-bottom: 0.5rem; }
-    .tv-sesi-name { font-size: 36px; font-weight: 300; margin-bottom: 4px; }
-    .tv-sesi-time { font-size: 14px; color: rgba(255,255,255,0.4); margin-bottom: 1.5rem; }
-    .tv-names-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .tv-sesi-name { font-size: 32px; font-weight: 300; margin-bottom: 2px; }
+    .tv-sesi-time { font-size: 13px; color: rgba(255,255,255,0.4); margin-bottom: 0.75rem; }
+    .tv-piket-label { font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.3); margin-bottom: 0.75rem; }
+    .tv-names-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.5rem; }
     .tv-name-chip { background: rgba(255,255,255,0.07); border: 0.5px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 12px 16px; }
     .tv-name-num { font-size: 10px; color: rgba(255,255,255,0.3); letter-spacing: 0.06em; margin-bottom: 4px; }
     .tv-name-text { font-size: 15px; font-weight: 500; }
-    .tv-countdown { margin-top: 1.5rem; font-size: 14px; color: rgba(255,255,255,0.3); }
+    .tv-hadits-wrap { border-top: 0.5px solid rgba(255,255,255,0.08); padding-top: 1.25rem; text-align: center; }
+    .tv-hadits-text { font-size: 15px; font-style: italic; color: rgba(255,255,255,0.7); line-height: 1.6; }
+    .tv-hadits-source { font-size: 12px; color: rgba(255,255,255,0.3); margin-top: 6px; letter-spacing: 0.05em; }
+    .tv-countdown { margin-top: 0.75rem; font-size: 13px; color: rgba(255,255,255,0.3); text-align: center; }
     .tv-countdown span { color: #9FE1CB; font-weight: 500; }
 
     .idle-wrap { position: relative; min-height: 100vh; overflow: hidden; background: #0a1628; }
@@ -32,15 +37,16 @@
     .idle-video.active { opacity: 1; }
     .idle-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.45); }
     .idle-content { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; text-align: center; }
+    .idle-logo { height: 72px; opacity: 0.8; filter: brightness(0) invert(1); margin-bottom: 1.5rem; }
     .idle-clock { font-size: 80px; font-weight: 200; letter-spacing: 0.05em; }
     .idle-date { font-size: 16px; color: rgba(255,255,255,0.4); margin-top: 8px; }
-    .idle-quote { margin-top: 3rem; max-width: 700px; }
-    .idle-quote-text { font-size: 22px; font-weight: 300; line-height: 1.6; color: rgba(255,255,255,0.9); font-style: italic; }
-    .idle-quote-author { font-size: 13px; color: rgba(255,255,255,0.35); margin-top: 1rem; letter-spacing: 0.08em; }
+    .idle-quote { margin-top: 2.5rem; max-width: 700px; }
+    .idle-quote-text { font-size: 20px; font-weight: 300; line-height: 1.6; color: rgba(255,255,255,0.85); font-style: italic; }
+    .idle-quote-author { font-size: 13px; color: rgba(255,255,255,0.35); margin-top: 0.75rem; letter-spacing: 0.08em; }
     .idle-dots { display: flex; gap: 6px; margin-top: 2rem; justify-content: center; }
     .idle-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.2); transition: background 0.3s; }
     .idle-dot.active { background: #5DCAA5; }
-    .idle-pesantren { position: absolute; bottom: 1.5rem; left: 50%; transform: translateX(-50%); font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; color: rgba(255,255,255,0.15); }
+    .idle-pesantren { position: absolute; bottom: 1.5rem; left: 50%; transform: translateX(-50%); font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; color: rgba(255,255,255,0.15); white-space: nowrap; }
 
     .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 10px; }
     .admin-title { font-size: 18px; font-weight: 500; color: white; }
@@ -69,7 +75,6 @@
 <body>
 
 <button class="toggle-btn" onclick="toggleMode()">⚙️ Admin</button>
-
 <div id="display-panel"></div>
 
 <div id="admin-panel">
@@ -111,12 +116,25 @@
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFpaWN4Z29sbHVjenFzanh2eGhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MTc1MTIsImV4cCI6MjA5MzQ5MzUxMn0.EBXJ_HtcDRgNO0rAxx5l196OyZgA2VdqTpu1ggpl03w';
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+  const LOGO_URL = 'https://qiicxgolluczqsjxvxhp.supabase.co/storage/v1/object/public/videos/logo%20aim%20putih.png.png';
+
   const SESI = [
     { id: 'sarapan', nama: 'Sarapan pagi', mulai: 7*60,     selesai: 7*60+30,  pengumuman: 7*60-10 },
     { id: 'siang',   nama: 'Makan siang',  mulai: 12*60+30, selesai: 13*60+30, pengumuman: 12*60+20 },
     { id: 'malam',   nama: 'Makan malam',  mulai: 18*60,    selesai: 18*60+30, pengumuman: 17*60+50 },
   ];
   const SLOTS = 8;
+
+  const HADITS = [
+    { text: 'Kebersihan adalah sebagian dari iman.', source: 'HR. Muslim' },
+    { text: 'Sesungguhnya Allah itu baik dan menyukai kebaikan, bersih dan menyukai kebersihan.', source: 'HR. Tirmidzi' },
+    { text: 'Makanlah dengan tangan kananmu dan makanlah apa yang ada di hadapanmu.', source: 'HR. Bukhari & Muslim' },
+    { text: 'Apabila salah seorang dari kalian makan, hendaknya ia menyebut nama Allah.', source: 'HR. Abu Dawud & Tirmidzi' },
+    { text: 'Janganlah salah seorang dari kalian makan dan minum dengan tangan kirinya.', source: 'HR. Muslim' },
+    { text: 'Berkah itu ada pada makanan yang dimakan bersama-sama.', source: 'HR. Abu Dawud' },
+    { text: 'Cucilah tanganmu sebelum dan sesudah makan.', source: 'HR. Ibnu Majah' },
+    { text: 'Janganlah kalian mencela makanan. Jika menyukainya, makanlah. Jika tidak, tinggalkanlah.', source: 'HR. Bukhari & Muslim' },
+  ];
 
   let weekOffset = 0;
   let adminData = {};
@@ -128,6 +146,8 @@
   let idleIndex = 0;
   let idleTimer = null;
   let idleBuilt = false;
+  let haditsIndex = 0;
+  let haditsTimer = null;
 
   function weekKey(offset=0) {
     const d = new Date();
@@ -184,6 +204,31 @@
     if (kv) { try { videos = JSON.parse(kv.names); } catch(e) { videos = []; } }
   }
 
+  function startHaditsRotation() {
+    if (haditsTimer) clearInterval(haditsTimer);
+    haditsIndex = 0;
+    updateHadits();
+    haditsTimer = setInterval(updateHadits, 5000);
+  }
+
+  function updateHadits() {
+    const el = document.getElementById('tv-hadits-text');
+    const src = document.getElementById('tv-hadits-source');
+    if (!el || !src) return;
+    const h = HADITS[haditsIndex % HADITS.length];
+    el.style.opacity = 0;
+    src.style.opacity = 0;
+    setTimeout(() => {
+      el.textContent = `"${h.text}"`;
+      src.textContent = h.source;
+      el.style.transition = 'opacity 0.6s';
+      src.style.transition = 'opacity 0.6s';
+      el.style.opacity = 1;
+      src.style.opacity = 1;
+    }, 300);
+    haditsIndex++;
+  }
+
   function buildIdle() {
     const panel = document.getElementById('display-panel');
     panel.innerHTML = `
@@ -191,12 +236,13 @@
         ${videos.map((v,i) => `<video class="idle-video" id="vid-${i}" src="${v.url}" muted playsinline></video>`).join('')}
         <div class="idle-overlay"></div>
         <div class="idle-content">
+          <img class="idle-logo" src="${LOGO_URL}" alt="Logo" />
           <div class="idle-clock" id="idle-clock"></div>
           <div class="idle-date" id="idle-date"></div>
           <div class="idle-quote" id="idle-quote"></div>
           <div class="idle-dots" id="idle-dots"></div>
         </div>
-        <div class="idle-pesantren">Pesantren — Sistem Jadwal Piket</div>
+        <div class="idle-pesantren">Ma'had Tahfizh Al Qur'an Abdullah Ibnu Mas'ud</div>
       </div>
     `;
     idleBuilt = true;
@@ -232,7 +278,6 @@
 
     const dots = document.getElementById('idle-dots');
     if (dots) dots.innerHTML = allItems.map((_,i) => `<div class="idle-dot ${i===idleIndex?'active':''}"></div>`).join('');
-
     idleIndex++;
   }
 
@@ -267,30 +312,49 @@
     const isActive = nowMin >= sesi.mulai;
     const mnitLagi = sesi.mulai - nowMin;
 
-    panel.innerHTML = `
-      <div class="tv-wrap">
-        <div class="tv-top">
-          <div><div class="tv-label">Pesantren — Jadwal Piket</div></div>
-          <div>
-            <div class="tv-clock">${timeStr}</div>
-            <div class="tv-date">${dateStr}</div>
-          </div>
-        </div>
-        <hr class="tv-divider">
-        <div class="tv-sesi-badge">${isActive ? 'Sedang berlangsung' : `${mnitLagi} menit lagi`}</div>
-        <div class="tv-sesi-name">${sesi.nama}</div>
-        <div class="tv-sesi-time">${formatJam(sesi.mulai)} – ${formatJam(sesi.selesai)} WIB</div>
-        <div class="tv-names-grid">
-          ${filtered.length ? filtered.map((n,i) => `
-            <div class="tv-name-chip">
-              <div class="tv-name-num">SANTRI ${String(i+1).padStart(2,'0')}</div>
-              <div class="tv-name-text">${n}</div>
+    const needsRebuild = !document.getElementById('tv-hadits-text');
+    if (needsRebuild) {
+      panel.innerHTML = `
+        <div class="tv-wrap">
+          <div class="tv-top">
+            <img class="tv-logo" src="${LOGO_URL}" alt="Logo" />
+            <div class="tv-right">
+              <div class="tv-clock" id="tv-clock">${timeStr}</div>
+              <div class="tv-date" id="tv-date">${dateStr}</div>
             </div>
-          `).join('') : '<div style="color:rgba(255,255,255,0.3)">Belum ada nama untuk sesi ini.</div>'}
+          </div>
+          <hr class="tv-divider">
+          <div class="tv-sesi-badge" id="tv-badge"></div>
+          <div class="tv-sesi-name" id="tv-sesi-name"></div>
+          <div class="tv-sesi-time" id="tv-sesi-time"></div>
+          <div class="tv-piket-label">Santri bertugas piket</div>
+          <div class="tv-names-grid" id="tv-names-grid"></div>
+          <div class="tv-hadits-wrap">
+            <div class="tv-hadits-text" id="tv-hadits-text"></div>
+            <div class="tv-hadits-source" id="tv-hadits-source"></div>
+          </div>
+          <div class="tv-countdown" id="tv-countdown"></div>
         </div>
-        ${!isActive ? `<div class="tv-countdown">Dimulai dalam <span>${mnitLagi} menit</span></div>` : ''}
-      </div>
-    `;
+      `;
+      startHaditsRotation();
+    }
+
+    document.getElementById('tv-clock').textContent = timeStr;
+    document.getElementById('tv-date').textContent = dateStr;
+    document.getElementById('tv-badge').textContent = isActive ? 'Sedang berlangsung' : `${mnitLagi} menit lagi`;
+    document.getElementById('tv-sesi-name').textContent = sesi.nama;
+    document.getElementById('tv-sesi-time').textContent = `${formatJam(sesi.mulai)} – ${formatJam(sesi.selesai)} WIB`;
+    document.getElementById('tv-names-grid').innerHTML = filtered.length
+      ? filtered.map((n,i) => `
+          <div class="tv-name-chip">
+            <div class="tv-name-num">SANTRI ${String(i+1).padStart(2,'0')}</div>
+            <div class="tv-name-text">${n}</div>
+          </div>
+        `).join('')
+      : '<div style="color:rgba(255,255,255,0.3)">Belum ada nama untuk sesi ini.</div>';
+    document.getElementById('tv-countdown').innerHTML = !isActive
+      ? `Dimulai dalam <span>${mnitLagi} menit</span>`
+      : '';
 
     if (isActive && sesi.id !== lastAnnouncedSesi && nowMin === sesi.mulai) {
       lastAnnouncedSesi = sesi.id;
@@ -337,7 +401,6 @@
         <button class="del-btn" onclick="quotes.splice(${i},1);renderKonten()">Hapus</button>
       </div>
     `).join('');
-
     document.getElementById('videos-list').innerHTML = videos.map((v,i) => `
       <div class="content-row">
         <input class="content-input" placeholder="URL Supabase Storage..." value="${v.url||''}" oninput="videos[${i}].url=this.value" />
@@ -387,7 +450,7 @@
     document.getElementById('display-panel').style.display = isAdmin ? 'none' : 'block';
     document.getElementById('admin-panel').style.display = isAdmin ? 'block' : 'none';
     document.querySelector('.toggle-btn').textContent = isAdmin ? '📺 Tampilan TV' : '⚙️ Admin';
-    if (isAdmin) loadAdmin();
+    if (isAdmin) { idleBuilt = false; loadAdmin(); }
   }
 
   loadDisplay().then(() => {
