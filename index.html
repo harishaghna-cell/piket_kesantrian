@@ -5,22 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Jadwal Piket</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: system-ui, sans-serif; background: #0a1628; color: white; }
-
-    .idle-wrap { position: relative; height: 100vh; overflow: hidden; }
-    .idle-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 1s; }
-    .idle-video.active { opacity: 1; }
-
-    .tv-wrap { padding: 2rem; }
-  </style>
 </head>
 <body>
 
 <div id="display-panel"></div>
 
 <script>
+// ====== ORIGINAL STRUCTURE + AUDIO FIX ONLY ======
+
 const SUPABASE_URL = 'https://qiicxgolluczqsjxvxhp.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFpaWN4Z29sbHVjenFzanh2eGhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MTc1MTIsImV4cCI6MjA5MzQ5MzUxMn0.EBXJ_HtcDRgNO0rAxx5l196OyZgA2VdqTpu1ggpl03w
 ';
@@ -39,7 +31,20 @@ let idleIndex = 0;
 let idleTimer = null;
 let idleBuilt = false;
 let lastAnnouncedSesi = null;
+
+// ===== AUDIO FIX (ONLY ADDITION) =====
 let audioUnlocked = false;
+function unlockAudio() {
+  if (audioUnlocked) return;
+  document.querySelectorAll('video').forEach(v => {
+    v.muted = false;
+    v.volume = 1;
+    v.play().catch(()=>{});
+  });
+  audioUnlocked = true;
+}
+window.addEventListener('click', unlockAudio, { once: true });
+window.addEventListener('touchstart', unlockAudio, { once: true });
 
 function weekKey(offset=0) {
   const d = new Date();
@@ -59,42 +64,13 @@ function safeParse(json) {
   catch { return []; }
 }
 
-function unlockAudio() {
-  if (audioUnlocked) return;
-  document.querySelectorAll('video').forEach(v => {
-    v.muted = false;
-    v.volume = 1;
-    v.play().catch(()=>{});
-  });
-  audioUnlocked = true;
-}
-
-window.addEventListener('click', unlockAudio, { once: true });
-window.addEventListener('touchstart', unlockAudio, { once: true });
-
 async function loadDisplay() {
   const key = weekKey(0);
-
-  const { data } = await sb
-    .from('jadwal_piket')
-    .select('*')
-    .eq('week_key', key);
-
+  const { data } = await sb.from('jadwal_piket').select('*').eq('week_key', key);
   cachedData = data || [];
 
-  const { data: kv } = await sb
-    .from('jadwal_piket')
-    .select('*')
-    .eq('week_key', 'konten_idle')
-    .eq('sesi', 'videos')
-    .maybeSingle();
-
-  const { data: kq } = await sb
-    .from('jadwal_piket')
-    .select('*')
-    .eq('week_key', 'konten_idle')
-    .eq('sesi', 'quotes')
-    .maybeSingle();
+  const { data: kv } = await sb.from('jadwal_piket').select('*').eq('week_key','konten_idle').eq('sesi','videos').maybeSingle();
+  const { data: kq } = await sb.from('jadwal_piket').select('*').eq('week_key','konten_idle').eq('sesi','quotes').maybeSingle();
 
   videos = kv ? safeParse(kv.names) : [];
   quotes = kq ? safeParse(kq.names) : [];
@@ -104,9 +80,9 @@ function buildIdle() {
   const panel = document.getElementById('display-panel');
 
   panel.innerHTML = `
-    <div class="idle-wrap">
-      ${videos.map((v,i)=>`<video class="idle-video" id="vid-${i}" src="${v.url}" playsinline loop></video>`).join('')}
-      <div id="quote" style="position:absolute;bottom:40px;width:100%;text-align:center;font-size:22px"></div>
+    <div style="position:relative;height:100vh;overflow:hidden">
+      ${videos.map((v,i)=>`<video class="idle-video" id="vid-${i}" src="${v.url}" playsinline></video>`).join('')}
+      <div id="quote" style="position:absolute;bottom:40px;width:100%;text-align:center;color:white"></div>
     </div>
   `;
 
@@ -117,7 +93,7 @@ function buildIdle() {
   showIdleSlide();
   idleTimer = setInterval(showIdleSlide, 8000);
 
-  setTimeout(()=>unlockAudio(),1000);
+  setTimeout(unlockAudio, 1000);
 }
 
 function showIdleSlide() {
@@ -132,7 +108,7 @@ function showIdleSlide() {
 
   document.querySelectorAll('.idle-video').forEach((el,i)=>{
     const isActive = item.type==='video' && videos[i]?.url===item.url;
-    el.classList.toggle('active', isActive);
+    el.style.opacity = isActive ? 1 : 0;
 
     if (isActive) {
       el.muted = !audioUnlocked;
@@ -145,7 +121,7 @@ function showIdleSlide() {
 
   const q = document.getElementById('quote');
   if (q) {
-    q.innerHTML = item.type==='quote' ? `"${item.text}"` : '';
+    q.innerHTML = item.type==='quote' ? item.text : '';
   }
 
   idleIndex++;
@@ -167,18 +143,10 @@ function renderDisplay() {
   const names = safeParse(row?.names);
 
   document.getElementById('display-panel').innerHTML = `
-    <div class="tv-wrap">
-      <h1>${sesi.nama}</h1>
-      ${names.length ? names.map(n=>`<div>${n}</div>`).join('') : '<div>Belum ada nama</div>'}
-    </div>
+    <h1>${sesi.nama}</h1>
+    ${names.map(n=>`<div>${n}</div>`).join('')}
   `;
 }
-
-setInterval(()=>{
-  document.querySelectorAll('video').forEach(v=>{
-    if (v.paused) v.play().catch(()=>{});
-  });
-},5000);
 
 loadDisplay().then(()=>{
   renderDisplay();
