@@ -5,167 +5,396 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Jadwal Piket</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #0a1628; color: white; min-height: 100vh; }
+    #admin-panel { display: none; background: #111; min-height: 100vh; padding: 1.5rem; }
+    #display-panel { display: block; }
+
+    .tv-wrap { padding: 2rem; min-height: 100vh; display: flex; flex-direction: column; }
+    .tv-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem; }
+    .tv-label { font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.4); }
+    .tv-clock { font-size: 64px; font-weight: 300; letter-spacing: 0.05em; }
+    .tv-date { font-size: 13px; color: rgba(255,255,255,0.4); margin-top: 4px; text-align: right; }
+    .tv-divider { border: none; border-top: 0.5px solid rgba(255,255,255,0.1); margin: 1.5rem 0; }
+    .tv-sesi-badge { display: inline-block; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #5DCAA5; margin-bottom: 0.5rem; }
+    .tv-sesi-name { font-size: 36px; font-weight: 300; margin-bottom: 4px; }
+    .tv-sesi-time { font-size: 14px; color: rgba(255,255,255,0.4); margin-bottom: 1.5rem; }
+    .tv-names-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .tv-name-chip { background: rgba(255,255,255,0.07); border: 0.5px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 12px 16px; }
+    .tv-name-num { font-size: 10px; color: rgba(255,255,255,0.3); letter-spacing: 0.06em; margin-bottom: 4px; }
+    .tv-name-text { font-size: 15px; font-weight: 500; }
+    .tv-countdown { margin-top: 1.5rem; font-size: 14px; color: rgba(255,255,255,0.3); }
+    .tv-countdown span { color: #9FE1CB; font-weight: 500; }
+
+    .idle-wrap { position: relative; min-height: 100vh; overflow: hidden; background: #0a1628; }
+    .idle-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 1s; }
+    .idle-video.active { opacity: 1; }
+    .idle-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.45); }
+    .idle-content { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; text-align: center; }
+    .idle-clock { font-size: 80px; font-weight: 200; letter-spacing: 0.05em; }
+    .idle-date { font-size: 16px; color: rgba(255,255,255,0.4); margin-top: 8px; }
+    .idle-quote { margin-top: 3rem; max-width: 700px; }
+    .idle-quote-text { font-size: 22px; font-weight: 300; line-height: 1.6; color: rgba(255,255,255,0.9); font-style: italic; }
+    .idle-quote-author { font-size: 13px; color: rgba(255,255,255,0.35); margin-top: 1rem; letter-spacing: 0.08em; }
+    .idle-dots { display: flex; gap: 6px; margin-top: 2rem; justify-content: center; }
+    .idle-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.2); transition: background 0.3s; }
+    .idle-dot.active { background: #5DCAA5; }
+    .idle-pesantren { position: absolute; bottom: 1.5rem; left: 50%; transform: translateX(-50%); font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; color: rgba(255,255,255,0.15); }
+
+    .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 10px; }
+    .admin-title { font-size: 18px; font-weight: 500; color: white; }
+    .admin-tabs { display: flex; gap: 8px; margin-bottom: 1.5rem; }
+    .admin-tab { background: #222; border: 0.5px solid #444; color: #aaa; border-radius: 8px; padding: 7px 16px; cursor: pointer; font-size: 14px; }
+    .admin-tab.active { background: #1D9E75; border-color: #1D9E75; color: white; }
+    .week-nav { display: flex; align-items: center; gap: 10px; }
+    .week-btn { background: #222; border: 0.5px solid #444; color: white; border-radius: 8px; padding: 6px 14px; cursor: pointer; font-size: 14px; }
+    .week-label { font-size: 14px; color: #aaa; }
+    .sesi-block { background: #1a1a1a; border: 0.5px solid #333; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
+    .sesi-title { font-size: 15px; font-weight: 500; margin-bottom: 4px; }
+    .sesi-time-label { font-size: 12px; color: #666; margin-bottom: 1rem; }
+    .name-input { display: block; width: 100%; background: #111; border: 0.5px solid #333; border-radius: 8px; padding: 8px 12px; color: white; font-size: 14px; margin-bottom: 8px; font-family: inherit; }
+    .save-btn { background: #1D9E75; border: none; color: white; border-radius: 8px; padding: 10px 24px; font-size: 14px; cursor: pointer; width: 100%; margin-top: 0.5rem; }
+    .status-msg { text-align: center; font-size: 13px; color: #5DCAA5; margin-top: 8px; min-height: 20px; }
+    .toggle-btn { position: fixed; bottom: 1rem; right: 1rem; background: rgba(255,255,255,0.1); border: 0.5px solid rgba(255,255,255,0.2); color: white; border-radius: 8px; padding: 8px 16px; font-size: 13px; cursor: pointer; z-index: 99; }
+    .content-block { background: #1a1a1a; border: 0.5px solid #333; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
+    .content-block-title { font-size: 15px; font-weight: 500; margin-bottom: 1rem; }
+    .content-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: flex-start; }
+    .content-input { flex: 1; background: #111; border: 0.5px solid #333; border-radius: 8px; padding: 8px 12px; color: white; font-size: 13px; font-family: inherit; }
+    .content-input-wide { width: 100%; background: #111; border: 0.5px solid #333; border-radius: 8px; padding: 8px 12px; color: white; font-size: 13px; font-family: inherit; margin-bottom: 8px; }
+    .del-btn { background: #2a1a1a; border: 0.5px solid #553333; color: #ff6666; border-radius: 8px; padding: 7px 12px; cursor: pointer; font-size: 13px; flex-shrink: 0; }
+    .add-btn { background: #1a2a1a; border: 0.5px solid #335533; color: #66cc66; border-radius: 8px; padding: 7px 14px; cursor: pointer; font-size: 13px; margin-top: 4px; }
+  </style>
 </head>
 <body>
 
+<button class="toggle-btn" onclick="toggleMode()">⚙️ Admin</button>
+
 <div id="display-panel"></div>
 
-<script>
-// ===== KODE ASLI + FIX AUDIO MINIMAL =====
-
-const SUPABASE_URL = 'https://qiicxgolluczqsjxvxhp.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFpaWN4Z29sbHVjenFzanh2eGhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MTc1MTIsImV4cCI6MjA5MzQ5MzUxMn0.EBXJ_HtcDRgNO0rAxx5l196OyZgA2VdqTpu1ggpl03w';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-const SESI = [
-  { id: 'sarapan', nama: 'Sarapan pagi', mulai: 420, selesai: 450, pengumuman: 410 },
-  { id: 'siang', nama: 'Makan siang', mulai: 750, selesai: 810, pengumuman: 740 },
-  { id: 'malam', nama: 'Makan malam', mulai: 1080, selesai: 1110, pengumuman: 1070 },
-];
-
-let cachedData = [];
-let videos = [];
-let quotes = [];
-let idleIndex = 0;
-let idleTimer = null;
-let idleBuilt = false;
-let audioUnlocked = false;
-
-function unlockAudio() {
-  if (audioUnlocked) return;
-  document.querySelectorAll('video').forEach(v => {
-    v.muted = false;
-    v.volume = 1;
-    v.play().catch(()=>{});
-  });
-  audioUnlocked = true;
-}
-window.addEventListener('click', unlockAudio, { once: true });
-window.addEventListener('touchstart', unlockAudio, { once: true });
-
-function weekKey(offset=0) {
-  const d = new Date();
-  d.setDate(d.getDate() - d.getDay() + 1 + offset*7);
-  const y = d.getFullYear();
-  const wn = Math.ceil(((d - new Date(y,0,1))/86400000 + 1)/7);
-  return `${y}-W${String(wn).padStart(2,'0')}`;
-}
-
-function getNowMin() {
-  const n = new Date();
-  return n.getHours()*60 + n.getMinutes();
-}
-
-function safeParse(json) {
-  try { return JSON.parse(json) || []; }
-  catch { return []; }
-}
-
-async function loadDisplay() {
-  const key = weekKey(0);
-
-  const { data } = await sb
-    .from('jadwal_piket')
-    .select('*')
-    .eq('week_key', key);
-
-  cachedData = data || [];
-
-  const { data: kv } = await sb
-    .from('jadwal_piket')
-    .select('*')
-    .eq('week_key','konten_idle')
-    .eq('sesi','videos')
-    .maybeSingle();
-
-  const { data: kq } = await sb
-    .from('jadwal_piket')
-    .select('*')
-    .eq('week_key','konten_idle')
-    .eq('sesi','quotes')
-    .maybeSingle();
-
-  videos = kv ? safeParse(kv.names) : [];
-  quotes = kq ? safeParse(kq.names) : [];
-}
-
-function buildIdle() {
-  const panel = document.getElementById('display-panel');
-
-  panel.innerHTML = `
-    <div style="position:relative;height:100vh;overflow:hidden">
-      ${videos.map((v,i)=>`<video id="vid-${i}" src="${v.url}" playsinline></video>`).join('')}
-      <div id="quote" style="position:absolute;bottom:40px;width:100%;text-align:center;color:white"></div>
+<div id="admin-panel">
+  <div class="admin-header">
+    <div class="admin-title">Panel Admin</div>
+    <div class="week-nav" id="week-nav">
+      <button class="week-btn" onclick="changeWeek(-1)">&#8592;</button>
+      <span class="week-label" id="admin-week-label"></span>
+      <button class="week-btn" onclick="changeWeek(1)">&#8594;</button>
     </div>
-  `;
+  </div>
+  <div class="admin-tabs">
+    <button class="admin-tab active" onclick="switchAdminTab('piket')">Jadwal Piket</button>
+    <button class="admin-tab" onclick="switchAdminTab('konten')">Konten Idle</button>
+  </div>
+  <div id="tab-piket">
+    <div id="admin-sesi-list"></div>
+    <button class="save-btn" onclick="saveAll()">Simpan jadwal minggu ini</button>
+    <div class="status-msg" id="status-msg"></div>
+  </div>
+  <div id="tab-konten" style="display:none;">
+    <div class="content-block">
+      <div class="content-block-title">Nasehat / Quotes</div>
+      <div id="quotes-list"></div>
+      <button class="add-btn" onclick="addQuote()">+ Tambah nasehat</button>
+    </div>
+    <div class="content-block">
+      <div class="content-block-title">Video (Supabase Storage)</div>
+      <div id="videos-list"></div>
+      <button class="add-btn" onclick="addVideo()">+ Tambah video</button>
+    </div>
+    <button class="save-btn" onclick="saveKonten()">Simpan konten</button>
+    <div class="status-msg" id="status-konten"></div>
+  </div>
+</div>
 
-  idleBuilt = true;
-  idleIndex = 0;
+<script>
+  const SUPABASE_URL = 'https://qiicxgolluczqsjxvxhp.supabase.co';
+  const SUPABASE_KEY = 'GANTI_DENGAN_ANON_KEY_KAMU';
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  if (idleTimer) clearInterval(idleTimer);
-  showIdleSlide();
-  idleTimer = setInterval(showIdleSlide, 8000);
-
-  setTimeout(unlockAudio, 1000);
-}
-
-function showIdleSlide() {
-  const items = [
-    ...videos.map(v=>({type:'video',...v})),
-    ...quotes.map(q=>({type:'quote',...q}))
+  const SESI = [
+    { id: 'sarapan', nama: 'Sarapan pagi', mulai: 7*60,     selesai: 7*60+30,  pengumuman: 7*60-10 },
+    { id: 'siang',   nama: 'Makan siang',  mulai: 12*60+30, selesai: 13*60+30, pengumuman: 12*60+20 },
+    { id: 'malam',   nama: 'Makan malam',  mulai: 18*60,    selesai: 18*60+30, pengumuman: 17*60+50 },
   ];
+  const SLOTS = 8;
 
-  if (!items.length) return;
+  let weekOffset = 0;
+  let adminData = {};
+  let isAdmin = false;
+  let lastAnnouncedSesi = null;
+  let cachedData = null;
+  let quotes = [];
+  let videos = [];
+  let idleIndex = 0;
+  let idleTimer = null;
+  let idleBuilt = false;
 
-  const item = items[idleIndex % items.length];
-
-  document.querySelectorAll('video').forEach((el,i)=>{
-    const isActive = item.type==='video' && videos[i]?.url===item.url;
-
-    if (isActive) {
-      el.style.display = 'block';
-      el.muted = !audioUnlocked;
-      el.play().catch(()=>{});
-    } else {
-      el.style.display = 'none';
-      el.pause();
-      el.currentTime = 0;
-    }
-  });
-
-  const q = document.getElementById('quote');
-  if (q) q.innerHTML = item.type==='quote' ? item.text : '';
-
-  idleIndex++;
-}
-
-function renderDisplay() {
-  const nowMin = getNowMin();
-  const sesi = SESI.find(s => nowMin >= s.pengumuman && nowMin < s.selesai);
-
-  if (!sesi) {
-    if (!idleBuilt) buildIdle();
-    return;
+  function weekKey(offset=0) {
+    const d = new Date();
+    d.setDate(d.getDate() - d.getDay() + 1 + offset*7);
+    const y = d.getFullYear();
+    const wn = Math.ceil(((d - new Date(y,0,1))/86400000 + 1)/7);
+    return `${y}-W${String(wn).padStart(2,'0')}`;
   }
 
-  idleBuilt = false;
-  if (idleTimer) clearInterval(idleTimer);
+  function weekRangeLabel(offset=0) {
+    const d = new Date();
+    d.setDate(d.getDate() - d.getDay() + 1 + offset*7);
+    const end = new Date(d); end.setDate(d.getDate()+6);
+    const fmt = x => x.toLocaleDateString('id-ID', {day:'numeric', month:'short'});
+    return `${fmt(d)} – ${fmt(end)}`;
+  }
 
-  const row = cachedData.find(r => r.sesi === sesi.id);
-  const names = safeParse(row?.names);
+  function getNowMin() {
+    const n = new Date();
+    return n.getHours()*60 + n.getMinutes();
+  }
 
-  document.getElementById('display-panel').innerHTML = `
-    <h1>${sesi.nama}</h1>
-    ${names.length ? names.map(n=>`<div>${n}</div>`).join('') : '<div>Belum ada data</div>'}
-  `;
-}
+  function getDisplaySesi() {
+    const now = getNowMin();
+    for (const s of SESI) {
+      if (now >= s.pengumuman && now < s.selesai) return s;
+    }
+    return null;
+  }
 
-loadDisplay().then(()=>{
-  renderDisplay();
-  setInterval(renderDisplay,1000);
-  setInterval(loadDisplay,30000);
-});
+  function formatJam(min) {
+    return `${String(Math.floor(min/60)).padStart(2,'0')}.${String(min%60).padStart(2,'0')}`;
+  }
+
+  function announce(sesi, names) {
+    if (!window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const filtered = names.filter(n => n.trim());
+    if (!filtered.length) return;
+    const text = `Perhatian. Waktu ${sesi.nama} telah tiba. Santri yang bertugas piket adalah: ${filtered.join(', ')}. Harap segera menuju ruang makan. Terima kasih.`;
+    const utt = new SpeechSynthesisUtterance(text);
+    utt.lang = 'id-ID';
+    utt.rate = 0.9;
+    window.speechSynthesis.speak(utt);
+  }
+
+  async function loadDisplay() {
+    const key = weekKey(0);
+    const { data } = await sb.from('jadwal_piket').select('*').eq('week_key', key);
+    cachedData = data;
+    const { data: kq } = await sb.from('jadwal_piket').select('*').eq('week_key', 'konten_idle').eq('sesi', 'quotes').maybeSingle();
+    if (kq) { try { quotes = JSON.parse(kq.names); } catch(e) { quotes = []; } }
+    const { data: kv } = await sb.from('jadwal_piket').select('*').eq('week_key', 'konten_idle').eq('sesi', 'videos').maybeSingle();
+    if (kv) { try { videos = JSON.parse(kv.names); } catch(e) { videos = []; } }
+  }
+
+  function buildIdle() {
+    const panel = document.getElementById('display-panel');
+    panel.innerHTML = `
+      <div class="idle-wrap" id="idle-wrap">
+        ${videos.map((v,i) => `<video class="idle-video" id="vid-${i}" src="${v.url}" muted playsinline></video>`).join('')}
+        <div class="idle-overlay"></div>
+        <div class="idle-content">
+          <div class="idle-clock" id="idle-clock"></div>
+          <div class="idle-date" id="idle-date"></div>
+          <div class="idle-quote" id="idle-quote"></div>
+          <div class="idle-dots" id="idle-dots"></div>
+        </div>
+        <div class="idle-pesantren">Pesantren — Sistem Jadwal Piket</div>
+      </div>
+    `;
+    idleBuilt = true;
+    idleIndex = 0;
+    if (idleTimer) clearInterval(idleTimer);
+    showIdleSlide();
+    idleTimer = setInterval(showIdleSlide, 8000);
+  }
+
+  function showIdleSlide() {
+    const allItems = [
+      ...quotes.map(q => ({ type: 'quote', ...q })),
+      ...videos.map(v => ({ type: 'video', ...v }))
+    ];
+    if (!allItems.length) return;
+    idleIndex = idleIndex % allItems.length;
+    const item = allItems[idleIndex];
+
+    document.querySelectorAll('.idle-video').forEach((el, i) => {
+      const isActive = item.type === 'video' && videos[i]?.url === item.url;
+      el.classList.toggle('active', isActive);
+      if (isActive) el.play().catch(()=>{});
+      else { el.pause(); el.currentTime = 0; }
+    });
+
+    const qEl = document.getElementById('idle-quote');
+    if (qEl) {
+      qEl.innerHTML = item.type === 'quote' ? `
+        <div class="idle-quote-text">"${item.text}"</div>
+        ${item.author ? `<div class="idle-quote-author">— ${item.author}</div>` : ''}
+      ` : '';
+    }
+
+    const dots = document.getElementById('idle-dots');
+    if (dots) dots.innerHTML = allItems.map((_,i) => `<div class="idle-dot ${i===idleIndex?'active':''}"></div>`).join('');
+
+    idleIndex++;
+  }
+
+  function updateIdleClock() {
+    const now = new Date();
+    const cl = document.getElementById('idle-clock');
+    const dt = document.getElementById('idle-date');
+    if (cl) cl.textContent = now.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+    if (dt) dt.textContent = now.toLocaleDateString('id-ID', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+  }
+
+  function renderDisplay() {
+    const now = new Date();
+    const nowMin = getNowMin();
+    const timeStr = now.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+    const dateStr = now.toLocaleDateString('id-ID', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+    const sesi = getDisplaySesi();
+    const panel = document.getElementById('display-panel');
+
+    if (!sesi) {
+      if (!idleBuilt) buildIdle();
+      else updateIdleClock();
+      return;
+    }
+
+    idleBuilt = false;
+    if (idleTimer) { clearInterval(idleTimer); idleTimer = null; }
+
+    const row = cachedData?.find(r => r.sesi === sesi.id);
+    const names = row ? JSON.parse(row.names) : [];
+    const filtered = names.filter(n => n.trim());
+    const isActive = nowMin >= sesi.mulai;
+    const mnitLagi = sesi.mulai - nowMin;
+
+    panel.innerHTML = `
+      <div class="tv-wrap">
+        <div class="tv-top">
+          <div><div class="tv-label">Pesantren — Jadwal Piket</div></div>
+          <div>
+            <div class="tv-clock">${timeStr}</div>
+            <div class="tv-date">${dateStr}</div>
+          </div>
+        </div>
+        <hr class="tv-divider">
+        <div class="tv-sesi-badge">${isActive ? 'Sedang berlangsung' : `${mnitLagi} menit lagi`}</div>
+        <div class="tv-sesi-name">${sesi.nama}</div>
+        <div class="tv-sesi-time">${formatJam(sesi.mulai)} – ${formatJam(sesi.selesai)} WIB</div>
+        <div class="tv-names-grid">
+          ${filtered.length ? filtered.map((n,i) => `
+            <div class="tv-name-chip">
+              <div class="tv-name-num">SANTRI ${String(i+1).padStart(2,'0')}</div>
+              <div class="tv-name-text">${n}</div>
+            </div>
+          `).join('') : '<div style="color:rgba(255,255,255,0.3)">Belum ada nama untuk sesi ini.</div>'}
+        </div>
+        ${!isActive ? `<div class="tv-countdown">Dimulai dalam <span>${mnitLagi} menit</span></div>` : ''}
+      </div>
+    `;
+
+    if (isActive && sesi.id !== lastAnnouncedSesi && nowMin === sesi.mulai) {
+      lastAnnouncedSesi = sesi.id;
+      announce(sesi, names);
+    }
+  }
+
+  async function loadAdmin() {
+    const key = weekKey(weekOffset);
+    document.getElementById('admin-week-label').textContent = weekRangeLabel(weekOffset);
+    const { data } = await sb.from('jadwal_piket').select('*').eq('week_key', key);
+    adminData = {};
+    SESI.forEach(s => {
+      const row = data?.find(r => r.sesi === s.id);
+      adminData[s.id] = row ? JSON.parse(row.names) : Array(SLOTS).fill('');
+    });
+    renderAdmin();
+  }
+
+  function renderAdmin() {
+    document.getElementById('admin-sesi-list').innerHTML = SESI.map(s => `
+      <div class="sesi-block">
+        <div class="sesi-title">${s.nama}</div>
+        <div class="sesi-time-label">${formatJam(s.mulai)} – ${formatJam(s.selesai)} WIB</div>
+        ${adminData[s.id].map((n,i) => `
+          <input class="name-input" data-sesi="${s.id}" data-idx="${i}" value="${n}" placeholder="Nama santri ${i+1}..." />
+        `).join('')}
+      </div>
+    `).join('');
+    document.querySelectorAll('.name-input').forEach(inp => {
+      inp.addEventListener('input', e => {
+        adminData[e.target.dataset.sesi][+e.target.dataset.idx] = e.target.value;
+      });
+    });
+  }
+
+  function renderKonten() {
+    document.getElementById('quotes-list').innerHTML = quotes.map((q,i) => `
+      <div class="content-row">
+        <div style="flex:1;">
+          <input class="content-input-wide" placeholder="Teks nasehat..." value="${q.text||''}" oninput="quotes[${i}].text=this.value" />
+          <input class="content-input-wide" placeholder="Sumber / penulis (opsional)" value="${q.author||''}" oninput="quotes[${i}].author=this.value" />
+        </div>
+        <button class="del-btn" onclick="quotes.splice(${i},1);renderKonten()">Hapus</button>
+      </div>
+    `).join('');
+
+    document.getElementById('videos-list').innerHTML = videos.map((v,i) => `
+      <div class="content-row">
+        <input class="content-input" placeholder="URL Supabase Storage..." value="${v.url||''}" oninput="videos[${i}].url=this.value" />
+        <button class="del-btn" onclick="videos.splice(${i},1);renderKonten()">Hapus</button>
+      </div>
+    `).join('');
+  }
+
+  function addQuote() { quotes.push({ text: '', author: '' }); renderKonten(); }
+  function addVideo() { videos.push({ url: '' }); renderKonten(); }
+
+  async function saveAll() {
+    const key = weekKey(weekOffset);
+    const msg = document.getElementById('status-msg');
+    msg.textContent = 'Menyimpan...';
+    for (const s of SESI) {
+      await sb.from('jadwal_piket').upsert({ week_key: key, sesi: s.id, names: JSON.stringify(adminData[s.id]) }, { onConflict: 'week_key,sesi' });
+    }
+    msg.textContent = 'Tersimpan!';
+    setTimeout(() => msg.textContent = '', 2000);
+    await loadDisplay();
+  }
+
+  async function saveKonten() {
+    const msg = document.getElementById('status-konten');
+    msg.textContent = 'Menyimpan...';
+    await sb.from('jadwal_piket').upsert({ week_key: 'konten_idle', sesi: 'quotes', names: JSON.stringify(quotes) }, { onConflict: 'week_key,sesi' });
+    await sb.from('jadwal_piket').upsert({ week_key: 'konten_idle', sesi: 'videos', names: JSON.stringify(videos) }, { onConflict: 'week_key,sesi' });
+    msg.textContent = 'Tersimpan!';
+    setTimeout(() => msg.textContent = '', 2000);
+    idleBuilt = false;
+    await loadDisplay();
+  }
+
+  function switchAdminTab(tab) {
+    document.querySelectorAll('.admin-tab').forEach((t,i) => t.classList.toggle('active', (i===0&&tab==='piket')||(i===1&&tab==='konten')));
+    document.getElementById('tab-piket').style.display = tab==='piket' ? 'block' : 'none';
+    document.getElementById('tab-konten').style.display = tab==='konten' ? 'block' : 'none';
+    document.getElementById('week-nav').style.display = tab==='piket' ? 'flex' : 'none';
+    if (tab==='konten') renderKonten();
+  }
+
+  function changeWeek(dir) { weekOffset += dir; loadAdmin(); }
+
+  function toggleMode() {
+    isAdmin = !isAdmin;
+    document.getElementById('display-panel').style.display = isAdmin ? 'none' : 'block';
+    document.getElementById('admin-panel').style.display = isAdmin ? 'block' : 'none';
+    document.querySelector('.toggle-btn').textContent = isAdmin ? '📺 Tampilan TV' : '⚙️ Admin';
+    if (isAdmin) loadAdmin();
+  }
+
+  loadDisplay().then(() => {
+    renderDisplay();
+    setInterval(renderDisplay, 1000);
+    setInterval(loadDisplay, 30000);
+  });
 </script>
-
 </body>
 </html>
