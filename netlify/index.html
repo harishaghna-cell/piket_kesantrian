@@ -13,7 +13,7 @@
 
     .tv-wrap { padding: 2rem; min-height: 100vh; display: flex; flex-direction: column; }
     .tv-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
-    .tv-logo { height: 206px; opacity: 0.9; filter: brightness(0) invert(1); }
+    .tv-logo { height: 86px; opacity: 0.9; filter: brightness(0) invert(1); }
     .tv-right { text-align: right; }
     .tv-clock { font-size: 56px; font-weight: 200; letter-spacing: 0.05em; }
     .tv-date { font-size: 13px; color: rgba(255,255,255,0.4); margin-top: 4px; }
@@ -27,8 +27,8 @@
     .tv-name-num { font-size: 10px; color: rgba(255,255,255,0.3); letter-spacing: 0.06em; margin-bottom: 4px; }
     .tv-name-text { font-size: 15px; font-weight: 500; }
     .tv-hadits-wrap { border-top: 0.5px solid rgba(255,255,255,0.08); padding-top: 1.25rem; text-align: center; }
-    .tv-hadits-text { font-size: 15px; font-style: italic; color: rgba(255,255,255,0.7); line-height: 1.6; }
-    .tv-hadits-source { font-size: 12px; color: rgba(255,255,255,0.3); margin-top: 6px; letter-spacing: 0.05em; }
+    .tv-hadits-text { font-size: 15px; font-style: italic; color: rgba(255,255,255,0.7); line-height: 1.6; transition: opacity 0.6s; }
+    .tv-hadits-source { font-size: 12px; color: rgba(255,255,255,0.3); margin-top: 6px; letter-spacing: 0.05em; transition: opacity 0.6s; }
     .tv-countdown { margin-top: 0.75rem; font-size: 13px; color: rgba(255,255,255,0.3); text-align: center; }
     .tv-countdown span { color: #9FE1CB; font-weight: 500; }
 
@@ -37,7 +37,7 @@
     .idle-video.active { opacity: 1; }
     .idle-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.45); }
     .idle-content { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; text-align: center; }
-    .idle-logo { height: 222px; opacity: 0.8; filter: brightness(0) invert(1); margin-bottom: 1.5rem; }
+    .idle-logo { height: 102px; opacity: 0.8; filter: brightness(0) invert(1); margin-bottom: 1.5rem; }
     .idle-clock { font-size: 80px; font-weight: 200; letter-spacing: 0.05em; }
     .idle-date { font-size: 16px; color: rgba(255,255,255,0.4); margin-top: 8px; }
     .idle-quote { margin-top: 2.5rem; max-width: 700px; }
@@ -82,7 +82,8 @@
   <div style="font-size:14px;color:rgba(255,255,255,0.35);margin-top:0.5rem;">Sistem Jadwal Piket</div>
   <button onclick="activateSound()" style="margin-top:1rem;background:#1D9E75;border:none;color:white;border-radius:12px;padding:16px 40px;font-size:18px;cursor:pointer;letter-spacing:0.05em;">🔊 Aktifkan Suara</button>
 </div>
-<div id="display-panel"></div>
+
+<div id="display-panel" style="pointer-events:none;"></div>
 
 <div id="admin-panel">
   <div class="admin-header">
@@ -122,13 +123,13 @@
   const SUPABASE_URL = 'https://qiicxgolluczqsjxvxhp.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFpaWN4Z29sbHVjenFzanh2eGhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MTc1MTIsImV4cCI6MjA5MzQ5MzUxMn0.EBXJ_HtcDRgNO0rAxx5l196OyZgA2VdqTpu1ggpl03w';
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
   const LOGO_URL = 'https://qiicxgolluczqsjxvxhp.supabase.co/storage/v1/object/public/videos/logo%20aim%20putih.png.png';
+  const ELEVENLABS_VOICE = 'ErXwobaYiN019PkySvjV';
 
   const SESI = [
-    { id: 'sarapan', nama: 'Sarapan pagi', mulai: 7*60,     selesai: 7*60+30,  pengumuman: 7*60-10 },
-    { id: 'siang',   nama: 'Makan siang',  mulai: 12*60+30, selesai: 13*60+30, pengumuman: 12*60+20 },
-    { id: 'malam',   nama: 'Makan malam',  mulai: 18*60,    selesai: 18*60+30, pengumuman: 17*60+50 },
+    { id: 'sarapan', nama: 'الإفطار',    mulai: 7*60,     selesai: 7*60+30,  pengumuman: 7*60-10 },
+    { id: 'siang',   nama: 'الغداء',     mulai: 12*60+30, selesai: 13*60+30, pengumuman: 12*60+20 },
+    { id: 'malam',   nama: 'العشاء',     mulai: 18*60,    selesai: 18*60+30, pengumuman: 17*60+50 },
   ];
   const SLOTS = 8;
 
@@ -189,7 +190,23 @@
     return `${String(Math.floor(min/60)).padStart(2,'0')}.${String(min%60).padStart(2,'0')}`;
   }
 
-  
+  async function announce(sesi, names) {
+    const filtered = names.filter(n => n.trim());
+    if (!filtered.length) return;
+    const text = `انتبهوا جميعاً. حان الآن وقت ${sesi.nama}. الطلاب المكلفون بالنظافة هم: ${filtered.join('، ')}. يرجى التوجه فوراً إلى قاعة الطعام. جزاكم الله خيراً.`;
+    try {
+      const r = await fetch('/.netlify/functions/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, voice_id: ELEVENLABS_VOICE })
+      });
+      const b = await r.blob();
+      const a = new Audio(URL.createObjectURL(b));
+      a.play();
+    } catch(e) {
+      console.error('TTS error:', e);
+    }
+  }
 
   async function loadDisplay() {
     const key = weekKey(0);
@@ -218,8 +235,6 @@
     setTimeout(() => {
       el.textContent = `"${h.text}"`;
       src.textContent = h.source;
-      el.style.transition = 'opacity 0.6s';
-      src.style.transition = 'opacity 0.6s';
       el.style.opacity = 1;
       src.style.opacity = 1;
     }, 300);
@@ -257,14 +272,12 @@
     if (!allItems.length) return;
     idleIndex = idleIndex % allItems.length;
     const item = allItems[idleIndex];
-
     document.querySelectorAll('.idle-video').forEach((el, i) => {
       const isActive = item.type === 'video' && videos[i]?.url === item.url;
       el.classList.toggle('active', isActive);
       if (isActive) el.play().catch(()=>{});
       else { el.pause(); el.currentTime = 0; }
     });
-
     const qEl = document.getElementById('idle-quote');
     if (qEl) {
       qEl.innerHTML = item.type === 'quote' ? `
@@ -272,7 +285,6 @@
         ${item.author ? `<div class="idle-quote-author">— ${item.author}</div>` : ''}
       ` : '';
     }
-
     const dots = document.getElementById('idle-dots');
     if (dots) dots.innerHTML = allItems.map((_,i) => `<div class="idle-dot ${i===idleIndex?'active':''}"></div>`).join('');
     idleIndex++;
@@ -441,15 +453,13 @@
   }
 
   function changeWeek(dir) { weekOffset += dir; loadAdmin(); }
+
   function activateSound() {
     const overlay = document.getElementById('sound-overlay');
     overlay.style.display = 'none';
     document.getElementById('display-panel').style.pointerEvents = 'auto';
-    const utt = new SpeechSynthesisUtterance('Sistem jadwal piket aktif.');
-    utt.lang = 'id-ID';
-    utt.volume = 0;
-    window.speechSynthesis.speak(utt);
   }
+
   function toggleMode() {
     isAdmin = !isAdmin;
     document.getElementById('display-panel').style.display = isAdmin ? 'none' : 'block';
