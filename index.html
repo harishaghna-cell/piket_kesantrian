@@ -451,7 +451,15 @@
   }
 
   function changeWeek(dir) { weekOffset += dir; loadAdmin(); }
-
+  function activateSound() {
+    const overlay = document.getElementById('sound-overlay');
+    overlay.style.display = 'none';
+    document.getElementById('display-panel').style.pointerEvents = 'auto';
+    const utt = new SpeechSynthesisUtterance('Sistem jadwal piket aktif.');
+    utt.lang = 'id-ID';
+    utt.volume = 0;
+    window.speechSynthesis.speak(utt);
+  }
   function toggleMode() {
     isAdmin = !isAdmin;
     document.getElementById('display-panel').style.display = isAdmin ? 'none' : 'block';
