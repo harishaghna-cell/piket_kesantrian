@@ -414,7 +414,69 @@
     idleIndex = 0;
     videoJedaMode = false;
     if (idleTimer) clearInterval(idleTimer);
-    showIdleSlide();
+    function showIdleSlide() {
+    if (videoJedaMode) return;
+
+    const allVideos = videos;
+    const allQuotes = quotes;
+    if (!allVideos.length && !allQuotes.length) return;
+
+    // Semua video sudah diputar, masuk mode jeda
+    if (idleIndex >= allVideos.length + allQuotes.length && allVideos.length > 0) {
+      videoJedaMode = true;
+      document.querySelectorAll('.idle-video').forEach(el => {
+        el.classList.remove('active'); el.pause(); el.currentTime = 0;
+      });
+      const content = document.getElementById('idle-content');
+      const overlay = document.querySelector('.idle-overlay');
+      if (content) content.style.display = 'flex';
+      if (overlay) overlay.style.opacity = '1';
+      if (videoJedaTimer) clearTimeout(videoJedaTimer);
+      videoJedaTimer = setTimeout(() => {
+        videoJedaMode = false;
+        idleIndex = 0;
+        showIdleSlide();
+      }, 5 * 60 * 1000);
+      return;
+    }
+
+    if (idleIndex < allVideos.length) {
+      const v = allVideos[idleIndex];
+      document.querySelectorAll('.idle-video').forEach((el, i) => {
+        const active = i === idleIndex;
+        el.classList.toggle('active', active);
+        if (active) { el.muted = false; el.play().catch(()=>{}); }
+        else { el.pause(); el.currentTime = 0; }
+      });
+      const content = document.getElementById('idle-content');
+      const overlay = document.querySelector('.idle-overlay');
+      if (content) content.style.display = 'none';
+      if (overlay) overlay.style.opacity = '0';
+      idleIndex++;
+    } else if (allQuotes.length) {
+      document.querySelectorAll('.idle-video').forEach(el => {
+        el.classList.remove('active'); el.pause(); el.currentTime = 0;
+      });
+      const content = document.getElementById('idle-content');
+      const overlay = document.querySelector('.idle-overlay');
+      if (content) content.style.display = 'flex';
+      if (overlay) overlay.style.opacity = '1';
+      const qi = (idleIndex - allVideos.length) % allQuotes.length;
+      const q = allQuotes[qi];
+      const qEl = document.getElementById('idle-quote');
+      if (qEl) qEl.innerHTML = `<div class="idle-quote-text">"${q.text}"</div>${q.author ? `<div class="idle-quote-author">— ${q.author}</div>` : ''}`;
+      idleIndex++;
+    } else {
+      idleIndex = 0;
+      videoJedaMode = true;
+      if (videoJedaTimer) clearTimeout(videoJedaTimer);
+      videoJedaTimer = setTimeout(() => {
+        videoJedaMode = false;
+        idleIndex = 0;
+        showIdleSlide();
+      }, 5 * 60 * 1000);
+    }
+  };
     idleTimer = setInterval(() => {
       const activeVid = document.querySelector('.idle-video.active');
       if (!activeVid || activeVid.ended || activeVid.paused) {
