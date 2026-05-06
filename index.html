@@ -284,7 +284,11 @@ const LAT = -6.3741;
       document.getElementById('sholat-time').textContent = timeStr;
       document.getElementById('sholat-badge').textContent = badgeText;
       document.getElementById('sholat-title').textContent = titleText;
-      document.getElementById('sholat-countdown').textContent = `${String(active.countdown).padStart(2,'0')}:00`;
+     const nowSec = new Date().getSeconds();
+      const totalSec = active.countdown * 60 - nowSec;
+      const mm = String(Math.floor(totalSec / 60)).padStart(2,'0');
+      const ss = String(totalSec % 60).padStart(2,'0');
+      document.getElementById('sholat-countdown').textContent = `${mm}:${ss}`;
       document.getElementById('sholat-bg').src = bg;
     }
   }
