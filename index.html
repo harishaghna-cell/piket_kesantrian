@@ -547,13 +547,33 @@
 
   function updateIdleClock() {
     const now = new Date();
+    const timeStr = now.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+    const dateStr = now.toLocaleDateString('id-ID', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+    const isVideoActive = !!document.querySelector('.idle-video.active');
+
     const cl = document.getElementById('idle-clock');
     const dt = document.getElementById('idle-date');
     const content = document.getElementById('idle-content');
-    const isVideoActive = document.querySelector('.idle-video.active');
-    if (content && !videoJedaMode) content.style.display = isVideoActive ? 'none' : 'flex';
-    if (cl) cl.textContent = now.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
-    if (dt) dt.textContent = now.toLocaleDateString('id-ID', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+    const overlay = document.querySelector('.idle-overlay');
+    const videoOverlay = document.getElementById('video-overlay');
+
+    if (isVideoActive && !videoJedaMode) {
+      if (content) content.style.display = 'none';
+      if (overlay) overlay.style.opacity = '0';
+      if (videoOverlay) {
+        videoOverlay.style.display = 'flex';
+        const vClock = document.getElementById('video-clock');
+        const vDate = document.getElementById('video-date');
+        if (vClock) vClock.textContent = timeStr;
+        if (vDate) vDate.textContent = dateStr;
+      }
+    } else {
+      if (content) content.style.display = 'flex';
+      if (overlay) overlay.style.opacity = '1';
+      if (videoOverlay) videoOverlay.style.display = 'none';
+      if (cl) cl.textContent = timeStr;
+      if (dt) dt.textContent = dateStr;
+    }
   }
 
   function renderDisplay() {
