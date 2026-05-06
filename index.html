@@ -35,7 +35,7 @@
     .idle-wrap { position: relative; min-height: 100vh; overflow: hidden; background: #0a1628; }
     .idle-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 1s; }
     .idle-video.active { opacity: 1; }
-    .idle-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.45); }
+    .idle-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.45); transition: opacity 0.5s; }
     .idle-content { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; text-align: center; }
     .idle-logo { height: 102px; opacity: 0.8; filter: brightness(0) invert(1); margin-bottom: 1.5rem; }
     .idle-clock { font-size: 80px; font-weight: 200; letter-spacing: 0.05em; }
@@ -172,8 +172,7 @@
     { text: 'Janganlah kalian mencela makanan. Jika menyukainya, makanlah. Jika tidak, tinggalkanlah.', source: 'HR. Bukhari & Muslim' },
   ];
 
-  const HARI_JS = ['minggu','senin','selasa','rabu','kamis','jumat','sabtu'];
-const LAT = -6.3741;
+  const LAT = -6.3741;
   const LNG = 106.8958;
   const IQOMAH_MENIT = 10;
 
@@ -198,101 +197,8 @@ const LAT = -6.3741;
     { text: 'Sholat berjemaah lebih utama 27 derajat daripada sholat sendirian.', source: 'HR. Bukhari & Muslim' },
   ];
 
-  let jadwalSholat = null;
-  let sholatHaditsIndex = 0;
-  let sholatHaditsTimer = null;
-  let lastSholatKey = null;
+  const HARI_JS = ['minggu','senin','selasa','rabu','kamis','jumat','sabtu'];
 
-  async function loadJadwalSholat() {
-    try {
-      const today = new Date();
-      const d = today.getDate();
-      const m = today.getMonth() + 1;
-      const y = today.getFullYear();
-      const res = await fetch(`https://api.aladhan.com/v1/timings/${d}-${m}-${y}?latitude=${LAT}&longitude=${LNG}&method=11`);
-      const json = await res.json();
-      jadwalSholat = json.data.timings;
-    } catch(e) { console.error('Gagal load jadwal sholat:', e); }
-  }
-
-  function getActiveSholat() {
-    if (!jadwalSholat) return null;
-    const now = new Date();
-    const nowMin = now.getHours()*60 + now.getMinutes();
-
-    for (const key of ['Fajr','Dhuhr','Asr','Maghrib','Isha']) {
-      const [h, mn] = jadwalSholat[key].split(':').map(Number);
-      const sholatMin = h*60 + mn;
-      const preMin = sholatMin - 5;
-      const iqomahMin = sholatMin + IQOMAH_MENIT;
-
-      if (nowMin >= preMin && nowMin < iqomahMin) {
-        const phase = nowMin < sholatMin ? 'pre' : 'iqomah';
-        const countdown = phase === 'pre' ? sholatMin - nowMin : iqomahMin - nowMin;
-        return { key, phase, countdown, sholatMin, iqomahMin };
-      }
-    }
-    return null;
-  }
-
-  function renderSholatDisplay(active) {
-    const panel = document.getElementById('display-panel');
-    const bg = SHOLAT_BG[active.key];
-    const nama = SHOLAT_NAMES[active.key];
-    const now = new Date();
-    const timeStr = now.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
-
-    const isPre = active.phase === 'pre';
-    const badgeText = isPre ? `${active.countdown} menit menuju adzan` : `Iqomah dalam ${active.countdown} menit`;
-    const titleText = isPre ? `Bersiap untuk sholat ${nama}` : `Sholat ${nama}`;
-
-    const nowSec = now.getSeconds();
-    const totalSec = active.countdown * 60 - nowSec;
-    const mm = String(Math.floor(totalSec / 60)).padStart(2,'0');
-    const ss = String(totalSec % 60).padStart(2,'0');
-
-    const hadits = HADITS_SHOLAT[sholatHaditsIndex % HADITS_SHOLAT.length];
-
-    const needsRebuild = !document.getElementById('sholat-panel');
-    if (needsRebuild) {
-      if (haditsTimer) clearInterval(haditsTimer);
-      if (idleTimer) clearInterval(idleTimer);
-      idleBuilt = false;
-
-      panel.innerHTML = `
-        <div id="sholat-panel" style="position:relative;min-height:100vh;overflow:hidden;background:#0a1020;">
-          <img id="sholat-bg" src="${bg}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.35;transition:opacity 1s;" />
-          <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,0.3),rgba(0,0,0,0.7));"></div>
-          <div style="position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:2rem;text-align:center;">
-            <div style="font-size:13px;color:rgba(255,255,255,0.5);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:1rem;" id="sholat-time">${timeStr}</div>
-            <div id="sholat-badge" style="font-size:13px;background:rgba(255,255,255,0.12);border:0.5px solid rgba(255,255,255,0.2);border-radius:20px;padding:6px 18px;color:rgba(255,255,255,0.8);margin-bottom:1.5rem;">${badgeText}</div>
-            <div id="sholat-title" style="font-size:48px;font-weight:200;color:white;letter-spacing:0.03em;margin-bottom:0.5rem;">${titleText}</div>
-            <div id="sholat-countdown" style="font-size:72px;font-weight:100;color:#9FE1CB;letter-spacing:0.05em;margin-bottom:2rem;">${mm}:${ss}</div>
-            <div style="max-width:600px;border-top:0.5px solid rgba(255,255,255,0.15);padding-top:1.5rem;">
-              <div id="sholat-hadits" style="font-size:18px;font-style:italic;color:rgba(255,255,255,0.8);line-height:1.7;transition:opacity 0.3s;">"${hadits.text}"</div>
-              <div id="sholat-source" style="font-size:13px;color:rgba(255,255,255,0.4);margin-top:8px;transition:opacity 0.3s;">${hadits.source}</div>
-            </div>
-          </div>
-        </div>
-      `;
-
-      sholatHaditsTimer = setInterval(() => {
-        sholatHaditsIndex++;
-        const h = HADITS_SHOLAT[sholatHaditsIndex % HADITS_SHOLAT.length];
-        const el = document.getElementById('sholat-hadits');
-        const src = document.getElementById('sholat-source');
-        if (el) { el.style.opacity=0; setTimeout(()=>{ el.textContent=`"${h.text}"`; el.style.opacity=1; },300); }
-        if (src) { src.style.opacity=0; setTimeout(()=>{ src.textContent=h.source; src.style.opacity=1; },300); }
-      }, 6000);
-
-    } else {
-      document.getElementById('sholat-time').textContent = timeStr;
-      document.getElementById('sholat-badge').textContent = badgeText;
-      document.getElementById('sholat-title').textContent = titleText;
-      document.getElementById('sholat-countdown').textContent = `${mm}:${ss}`;
-      document.getElementById('sholat-bg').src = bg;
-    }
-  }
   let weekOffset = 0;
   let adminData = {};
   let isAdmin = false;
@@ -306,6 +212,11 @@ const LAT = -6.3741;
   let idleBuilt = false;
   let haditsIndex = 0;
   let haditsTimer = null;
+  let jadwalSholat = null;
+  let sholatHaditsIndex = 0;
+  let sholatHaditsTimer = null;
+  let videoJedaMode = false;
+  let videoJedaTimer = null;
 
   function weekKey(offset=0) {
     const d = new Date();
@@ -338,13 +249,8 @@ const LAT = -6.3741;
     return `${String(Math.floor(min/60)).padStart(2,'0')}.${String(min%60).padStart(2,'0')}`;
   }
 
-  function isLewatBatas(sesi) {
-    return getNowMin() >= sesi.selesai - BATAS_MENIT;
-  }
-
-  function getStatusNama(sesiId, nama) {
-    return statusData[`${sesiId}__${nama}`] || false;
-  }
+  function isLewatBatas(sesi) { return getNowMin() >= sesi.selesai - BATAS_MENIT; }
+  function getStatusNama(sesiId, nama) { return statusData[`${sesiId}__${nama}`] || false; }
 
   async function toggleStatus(sesiId, nama) {
     const key = weekKey(0);
@@ -355,6 +261,87 @@ const LAT = -6.3741;
       week_key: key, hari, sesi_id: sesiId, nama, selesai: newVal
     }, { onConflict: 'week_key,hari,sesi_id,nama' });
     renderKonfirmasi();
+  }
+
+  async function loadJadwalSholat() {
+    try {
+      const today = new Date();
+      const d = today.getDate(), m = today.getMonth()+1, y = today.getFullYear();
+      const res = await fetch(`https://api.aladhan.com/v1/timings/${d}-${m}-${y}?latitude=${LAT}&longitude=${LNG}&method=11`);
+      const json = await res.json();
+      jadwalSholat = json.data.timings;
+    } catch(e) { console.error('Gagal load jadwal sholat:', e); }
+  }
+
+  function getActiveSholat() {
+    if (!jadwalSholat) return null;
+    const now = new Date();
+    const nowMin = now.getHours()*60 + now.getMinutes();
+    for (const key of ['Fajr','Dhuhr','Asr','Maghrib','Isha']) {
+      const [h, mn] = jadwalSholat[key].split(':').map(Number);
+      const sholatMin = h*60 + mn;
+      const preMin = sholatMin - 5;
+      const iqomahMin = sholatMin + IQOMAH_MENIT;
+      if (nowMin >= preMin && nowMin < iqomahMin) {
+        const phase = nowMin < sholatMin ? 'pre' : 'iqomah';
+        const countdown = phase === 'pre' ? sholatMin - nowMin : iqomahMin - nowMin;
+        return { key, phase, countdown, sholatMin, iqomahMin };
+      }
+    }
+    return null;
+  }
+
+  function renderSholatDisplay(active) {
+    const panel = document.getElementById('display-panel');
+    const bg = SHOLAT_BG[active.key];
+    const nama = SHOLAT_NAMES[active.key];
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+    const isPre = active.phase === 'pre';
+    const badgeText = isPre ? `${active.countdown} menit menuju adzan` : `Iqomah dalam ${active.countdown} menit`;
+    const titleText = isPre ? `Bersiap untuk sholat ${nama}` : `Sholat ${nama}`;
+    const nowSec = now.getSeconds();
+    const totalSec = active.countdown * 60 - nowSec;
+    const mm = String(Math.floor(totalSec / 60)).padStart(2,'0');
+    const ss = String(totalSec % 60).padStart(2,'0');
+    const hadits = HADITS_SHOLAT[sholatHaditsIndex % HADITS_SHOLAT.length];
+
+    const needsRebuild = !document.getElementById('sholat-panel');
+    if (needsRebuild) {
+      if (haditsTimer) clearInterval(haditsTimer);
+      if (idleTimer) clearInterval(idleTimer);
+      idleBuilt = false;
+      panel.innerHTML = `
+        <div id="sholat-panel" style="position:relative;min-height:100vh;overflow:hidden;background:#0a1020;">
+          <img id="sholat-bg" src="${bg}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.35;transition:opacity 1s;" />
+          <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,0.3),rgba(0,0,0,0.7));"></div>
+          <div style="position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:2rem;text-align:center;">
+            <div style="font-size:13px;color:rgba(255,255,255,0.5);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:1rem;" id="sholat-time">${timeStr}</div>
+            <div id="sholat-badge" style="font-size:13px;background:rgba(255,255,255,0.12);border:0.5px solid rgba(255,255,255,0.2);border-radius:20px;padding:6px 18px;color:rgba(255,255,255,0.8);margin-bottom:1.5rem;">${badgeText}</div>
+            <div id="sholat-title" style="font-size:48px;font-weight:200;color:white;letter-spacing:0.03em;margin-bottom:0.5rem;">${titleText}</div>
+            <div id="sholat-countdown" style="font-size:72px;font-weight:100;color:#9FE1CB;letter-spacing:0.05em;margin-bottom:2rem;">${mm}:${ss}</div>
+            <div style="max-width:600px;border-top:0.5px solid rgba(255,255,255,0.15);padding-top:1.5rem;">
+              <div id="sholat-hadits" style="font-size:18px;font-style:italic;color:rgba(255,255,255,0.8);line-height:1.7;transition:opacity 0.3s;">"${hadits.text}"</div>
+              <div id="sholat-source" style="font-size:13px;color:rgba(255,255,255,0.4);margin-top:8px;transition:opacity 0.3s;">${hadits.source}</div>
+            </div>
+          </div>
+        </div>
+      `;
+      sholatHaditsTimer = setInterval(() => {
+        sholatHaditsIndex++;
+        const h = HADITS_SHOLAT[sholatHaditsIndex % HADITS_SHOLAT.length];
+        const el = document.getElementById('sholat-hadits');
+        const src = document.getElementById('sholat-source');
+        if (el) { el.style.opacity=0; setTimeout(()=>{ el.textContent=`"${h.text}"`; el.style.opacity=1; },300); }
+        if (src) { src.style.opacity=0; setTimeout(()=>{ src.textContent=h.source; src.style.opacity=1; },300); }
+      }, 6000);
+    } else {
+      document.getElementById('sholat-time').textContent = timeStr;
+      document.getElementById('sholat-badge').textContent = badgeText;
+      document.getElementById('sholat-title').textContent = titleText;
+      document.getElementById('sholat-countdown').textContent = `${mm}:${ss}`;
+      document.getElementById('sholat-bg').src = bg;
+    }
   }
 
   async function loadDisplay() {
@@ -411,7 +398,7 @@ const LAT = -6.3741;
     const panel = document.getElementById('display-panel');
     panel.innerHTML = `
       <div class="idle-wrap">
-        ${videos.map((v,i) => `<video class="idle-video" id="vid-${i}" src="${v.url}" muted playsinline></video>`).join('')}
+        ${videos.map((v,i) => `<video class="idle-video" id="vid-${i}" src="${v.url}" playsinline></video>`).join('')}
         <div class="idle-overlay"></div>
         <div class="idle-content">
           <img class="idle-logo" src="${LOGO_URL}" alt="Logo" />
@@ -425,47 +412,75 @@ const LAT = -6.3741;
     `;
     idleBuilt = true;
     idleIndex = 0;
+    videoJedaMode = false;
     if (idleTimer) clearInterval(idleTimer);
     showIdleSlide();
-    idleTimer = setInterval(showIdleSlide, 8000);
+    idleTimer = setInterval(() => {
+      const activeVid = document.querySelector('.idle-video.active');
+      if (!activeVid || activeVid.ended || activeVid.paused) {
+        showIdleSlide();
+      }
+    }, 1000);
   }
 
   function showIdleSlide() {
-    const allItems = [
-      ...quotes.map(q => ({ type: 'quote', ...q })),
-      ...videos.map(v => ({ type: 'video', ...v }))
-    ];
-    if (!allItems.length) return;
-    idleIndex = idleIndex % allItems.length;
-    const item = allItems[idleIndex];
+    if (videoJedaMode) return;
 
-    const isVideo = item.type === 'video';
+    const allVideos = videos;
+    const allQuotes = quotes;
 
-    document.querySelectorAll('.idle-video').forEach((el, i) => {
-      const active = isVideo && videos[i]?.url === item.url;
-      el.classList.toggle('active', active);
-      if (active) el.play().catch(()=>{});
-      else { el.pause(); el.currentTime = 0; }
-    });
+    if (!allVideos.length && !allQuotes.length) return;
 
-    const content = document.getElementById('idle-content');
-    if (content) content.style.display = isVideo ? 'none' : 'flex';
+    const videosDone = idleIndex >= allVideos.length && allVideos.length > 0;
 
-    const overlay = document.querySelector('.idle-overlay');
-    if (overlay) overlay.style.opacity = isVideo ? '0' : '1';
+    if (videosDone) {
+      videoJedaMode = true;
+      document.querySelectorAll('.idle-video').forEach(el => {
+        el.classList.remove('active');
+        el.pause();
+        el.currentTime = 0;
+      });
+      const content = document.getElementById('idle-content');
+      const overlay = document.querySelector('.idle-overlay');
+      if (content) content.style.display = 'flex';
+      if (overlay) overlay.style.opacity = '1';
 
-    const qEl = document.getElementById('idle-quote');
-    if (qEl) {
-      qEl.innerHTML = item.type === 'quote' ? `
-        <div class="idle-quote-text">"${item.text}"</div>
-        ${item.author ? `<div class="idle-quote-author">— ${item.author}</div>` : ''}
-      ` : '';
+      if (videoJedaTimer) clearTimeout(videoJedaTimer);
+      videoJedaTimer = setTimeout(() => {
+        videoJedaMode = false;
+        idleIndex = 0;
+        showIdleSlide();
+      }, 5 * 60 * 1000);
+      return;
     }
 
-    const dots = document.getElementById('idle-dots');
-    if (dots) dots.innerHTML = allItems.map((_,i) => `<div class="idle-dot ${i===idleIndex?'active':''}"></div>`).join('');
-
-    idleIndex++;
+    if (idleIndex < allVideos.length) {
+      const v = allVideos[idleIndex];
+      document.querySelectorAll('.idle-video').forEach((el, i) => {
+        const active = allVideos[i]?.url === v.url;
+        el.classList.toggle('active', active);
+        if (active) { el.muted = false; el.play().catch(()=>{}); }
+        else { el.pause(); el.currentTime = 0; }
+      });
+      const content = document.getElementById('idle-content');
+      const overlay = document.querySelector('.idle-overlay');
+      if (content) content.style.display = 'none';
+      if (overlay) overlay.style.opacity = '0';
+      idleIndex++;
+    } else if (allQuotes.length) {
+      document.querySelectorAll('.idle-video').forEach(el => {
+        el.classList.remove('active'); el.pause(); el.currentTime = 0;
+      });
+      const content = document.getElementById('idle-content');
+      const overlay = document.querySelector('.idle-overlay');
+      if (content) content.style.display = 'flex';
+      if (overlay) overlay.style.opacity = '1';
+      const qi = (idleIndex - allVideos.length) % allQuotes.length;
+      const q = allQuotes[qi];
+      const qEl = document.getElementById('idle-quote');
+      if (qEl) qEl.innerHTML = `<div class="idle-quote-text">"${q.text}"</div>${q.author ? `<div class="idle-quote-author">— ${q.author}</div>` : ''}`;
+      idleIndex++;
+    }
   }
 
   function updateIdleClock() {
@@ -474,12 +489,13 @@ const LAT = -6.3741;
     const dt = document.getElementById('idle-date');
     const content = document.getElementById('idle-content');
     const isVideoActive = document.querySelector('.idle-video.active');
-    if (content) content.style.display = isVideoActive ? 'none' : 'flex';
+    if (content && !videoJedaMode) content.style.display = isVideoActive ? 'none' : 'flex';
     if (cl) cl.textContent = now.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
     if (dt) dt.textContent = now.toLocaleDateString('id-ID', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
   }
 
-  function renderDisplay() {const activeSholat = getActiveSholat();
+  function renderDisplay() {
+    const activeSholat = getActiveSholat();
     if (activeSholat) {
       if (idleTimer) { clearInterval(idleTimer); idleTimer = null; }
       if (haditsTimer) { clearInterval(haditsTimer); haditsTimer = null; }
@@ -493,6 +509,7 @@ const LAT = -6.3741;
       if (sholatHaditsTimer) { clearInterval(sholatHaditsTimer); sholatHaditsTimer = null; }
       idleBuilt = false;
     }
+
     const now = new Date();
     const nowMin = getNowMin();
     const timeStr = now.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
@@ -516,7 +533,7 @@ const LAT = -6.3741;
     const isActive = nowMin >= sesi.mulai;
     const mnitLagi = sesi.mulai - nowMin;
 
-   const needsRebuild = !document.getElementById('tv-hadits-text');
+    const needsRebuild = !document.getElementById('tv-hadits-text');
     if (needsRebuild) {
       panel.innerHTML = `
         <div class="tv-wrap">
@@ -573,7 +590,6 @@ const LAT = -6.3741;
     const row = cachedData?.find(r => r.sesi === hari);
     const names = row ? JSON.parse(row.names).filter(n => n.trim()) : [];
     const nowMin = getNowMin();
-
     document.getElementById('konfirmasi-list').innerHTML = SESI.map(s => {
       const lewat = nowMin >= s.selesai - BATAS_MENIT;
       return `
