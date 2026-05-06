@@ -472,6 +472,9 @@ const LAT = -6.3741;
     const now = new Date();
     const cl = document.getElementById('idle-clock');
     const dt = document.getElementById('idle-date');
+    const content = document.getElementById('idle-content');
+    const isVideoActive = document.querySelector('.idle-video.active');
+    if (content) content.style.display = isVideoActive ? 'none' : 'flex';
     if (cl) cl.textContent = now.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
     if (dt) dt.textContent = now.toLocaleDateString('id-ID', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
   }
@@ -689,6 +692,7 @@ const LAT = -6.3741;
   function activateSound() {
     document.getElementById('sound-overlay').style.display = 'none';
     document.getElementById('display-panel').style.pointerEvents = 'auto';
+    document.querySelectorAll('.idle-video').forEach(v => { v.muted = false; });
   }
 
   function toggleMode() {
