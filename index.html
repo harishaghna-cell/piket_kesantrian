@@ -22,6 +22,10 @@
     .tv-sesi-name { font-size: 32px; font-weight: 300; margin-bottom: 2px; }
     .tv-sesi-time { font-size: 13px; color: rgba(255,255,255,0.4); margin-bottom: 0.75rem; }
     .tv-piket-label { font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.3); margin-bottom: 0.75rem; }
+    .tv-names-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.5rem; }
+    .tv-name-chip { background: rgba(255,255,255,0.07); border: 0.5px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 12px 16px; transition: border-color 0.3s; }
+    .tv-name-num { font-size: 10px; color: rgba(255,255,255,0.3); letter-spacing: 0.06em; margin-bottom: 4px; }
+    .tv-name-text { font-size: 15px; font-weight: 500; }
     .tv-hadits-wrap { border-top: 0.5px solid rgba(255,255,255,0.08); padding-top: 1.25rem; text-align: center; }
     .tv-hadits-text { font-size: 15px; font-style: italic; color: rgba(255,255,255,0.7); line-height: 1.6; transition: opacity 0.6s; }
     .tv-hadits-source { font-size: 12px; color: rgba(255,255,255,0.3); margin-top: 6px; letter-spacing: 0.05em; transition: opacity 0.6s; }
@@ -69,7 +73,7 @@
     .add-btn { background: #1a2a1a; border: 0.5px solid #335533; color: #66cc66; border-radius: 8px; padding: 7px 14px; cursor: pointer; font-size: 13px; margin-top: 4px; }
 
     .konfirmasi-block { background: #1a1a1a; border: 0.5px solid #333; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
-    .konfirmasi-sesi-title { font-size: 14px; font-weight: 500; color: #5DCAA5; margin-bottom: 1rem; letter-spacing: 0.05em; }
+    .konfirmasi-sesi-title { font-size: 14px; font-weight: 500; color: #5DCAA5; margin-bottom: 1rem; }
     .konfirmasi-name-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 0.5px solid #222; }
     .konfirmasi-name-row:last-child { border-bottom: none; }
     .konfirmasi-name { font-size: 14px; }
@@ -149,7 +153,7 @@
   ];
 
   const SESI = [
-    { id: 'sarapan', nama: 'الإفطار', label: 'Sarapan pagi', mulai: 9*60+12, selesai: 9*60+30, pengumuman: 9*60+12 },
+    { id: 'sarapan', nama: 'الإفطار', label: 'Sarapan pagi', mulai: 7*60,     selesai: 7*60+30,  pengumuman: 7*60-10 },
     { id: 'siang',   nama: 'الغداء',  label: 'Makan siang',  mulai: 12*60+30, selesai: 13*60+30, pengumuman: 12*60+20 },
     { id: 'malam',   nama: 'العشاء',  label: 'Makan malam',  mulai: 18*60,    selesai: 18*60+30, pengumuman: 17*60+50 },
   ];
@@ -183,9 +187,6 @@
   let idleBuilt = false;
   let haditsIndex = 0;
   let haditsTimer = null;
-  let nameSlideIndex = 0;
-  let nameSlideTimer = null;
-  let nameSlideList = [];
 
   function weekKey(offset=0) {
     const d = new Date();
@@ -204,11 +205,7 @@
   }
 
   function getTodayHari() { return HARI_JS[new Date().getDay()]; }
-
-  function getNowMin() {
-    const n = new Date();
-    return n.getHours()*60 + n.getMinutes();
-  }
+  function getNowMin() { const n = new Date(); return n.getHours()*60 + n.getMinutes(); }
 
   function getDisplaySesi() {
     const now = getNowMin();
@@ -227,25 +224,17 @@
   }
 
   function getStatusNama(sesiId, nama) {
-    const key = `${sesiId}__${nama}`;
-    return statusData[key] || false;
+    return statusData[`${sesiId}__${nama}`] || false;
   }
 
   async function toggleStatus(sesiId, nama) {
     const key = weekKey(0);
     const hari = getTodayHari();
-    const current = getStatusNama(sesiId, nama);
-    const newVal = !current;
+    const newVal = !getStatusNama(sesiId, nama);
     statusData[`${sesiId}__${nama}`] = newVal;
-
     await sb.from('status_piket').upsert({
-      week_key: key,
-      hari,
-      sesi_id: sesiId,
-      nama,
-      selesai: newVal
+      week_key: key, hari, sesi_id: sesiId, nama, selesai: newVal
     }, { onConflict: 'week_key,hari,sesi_id,nama' });
-
     renderKonfirmasi();
   }
 
@@ -254,11 +243,9 @@
     const hari = getTodayHari();
     const { data } = await sb.from('jadwal_piket').select('*').eq('week_key', key);
     cachedData = data;
-
     const { data: sd } = await sb.from('status_piket').select('*').eq('week_key', key).eq('hari', hari);
     statusData = {};
     if (sd) sd.forEach(r => { statusData[`${r.sesi_id}__${r.nama}`] = r.selesai; });
-
     const { data: kq } = await sb.from('jadwal_piket').select('*').eq('week_key', 'konten_idle').eq('sesi', 'quotes').maybeSingle();
     if (kq) { try { quotes = JSON.parse(kq.names); } catch(e) { quotes = []; } }
     const { data: kv } = await sb.from('jadwal_piket').select('*').eq('week_key', 'konten_idle').eq('sesi', 'videos').maybeSingle();
@@ -299,52 +286,6 @@
       el.style.opacity = 1; src.style.opacity = 1;
     }, 300);
     haditsIndex++;
-  }
-
-  function startNameSlide(names) {
-    if (nameSlideTimer) clearInterval(nameSlideTimer);
-    nameSlideList = names;
-    nameSlideIndex = 0;
-    showNameSlide();
-    nameSlideTimer = setInterval(showNameSlide, 3000);
-  }
-
-  function showNameSlide() {
-    if (!nameSlideList.length) return;
-    nameSlideIndex = nameSlideIndex % nameSlideList.length;
-    const card = document.getElementById('tv-name-card');
-    const numEl = document.getElementById('tv-name-num');
-    const textEl = document.getElementById('tv-name-text');
-    const dotsEl = document.getElementById('tv-name-dots');
-    if (!card || !numEl || !textEl) return;
-
-    const nama = nameSlideList[nameSlideIndex];
-    const sesi = getDisplaySesi();
-    const sudah = sesi ? getStatusNama(sesi.id, nama) : false;
-    const telat = sesi ? isLewatBatas(sesi) && !sudah : false;
-
-    card.style.opacity = 0;
-    card.style.transform = 'translateY(10px)';
-    setTimeout(() => {
-      numEl.textContent = `SANTRI ${String(nameSlideIndex+1).padStart(2,'0')} / ${nameSlideList.length}`;
-      numEl.style.color = sudah ? '#1D9E75' : telat ? '#ff4444' : 'rgba(255,255,255,0.3)';
-      textEl.textContent = nama + (sudah ? ' ✓' : telat ? ' !' : '');
-      textEl.style.color = sudah ? '#1D9E75' : telat ? '#ff4444' : 'white';
-      card.style.opacity = 1;
-      card.style.transform = 'translateY(0)';
-    }, 300);
-
-    if (dotsEl) {
-      dotsEl.innerHTML = nameSlideList.map((_,i) => {
-        const n = nameSlideList[i];
-        const s = sesi ? getStatusNama(sesi.id, n) : false;
-        const t = sesi ? isLewatBatas(sesi) && !s : false;
-        const color = s ? '#1D9E75' : t ? '#ff4444' : 'rgba(255,255,255,0.2)';
-        return `<div style="width:8px;height:8px;border-radius:50%;background:${i===nameSlideIndex?color:'rgba(255,255,255,0.15)'};transition:background 0.3s;outline:${i===nameSlideIndex?`2px solid ${color}`:'none'};outline-offset:2px;"></div>`;
-      }).join('');
-    }
-
-    nameSlideIndex++;
   }
 
   function buildIdle() {
@@ -444,13 +385,7 @@
           <div class="tv-sesi-name" id="tv-sesi-name"></div>
           <div class="tv-sesi-time" id="tv-sesi-time"></div>
           <div class="tv-piket-label">Santri bertugas piket hari ini</div>
-          <div id="tv-name-slide" style="min-height:120px;display:flex;align-items:center;justify-content:center;margin-bottom:1rem;">
-            <div id="tv-name-card" style="text-align:center;transition:opacity 0.5s,transform 0.5s;">
-              <div id="tv-name-num" style="font-size:12px;letter-spacing:0.1em;margin-bottom:8px;"></div>
-              <div id="tv-name-text" style="font-size:52px;font-weight:300;letter-spacing:0.02em;"></div>
-            </div>
-          </div>
-          <div id="tv-name-dots" style="display:flex;gap:8px;justify-content:center;margin-bottom:1.5rem;"></div>
+          <div class="tv-names-grid" id="tv-names-grid"></div>
           <div class="tv-hadits-wrap">
             <div class="tv-hadits-text" id="tv-hadits-text"></div>
             <div class="tv-hadits-source" id="tv-hadits-source"></div>
@@ -459,7 +394,6 @@
         </div>
       `;
       startHaditsRotation();
-      startNameSlide(filtered);
     }
 
     document.getElementById('tv-clock').textContent = timeStr;
@@ -467,6 +401,18 @@
     document.getElementById('tv-badge').textContent = isActive ? 'Sedang berlangsung' : `${mnitLagi} menit lagi`;
     document.getElementById('tv-sesi-name').textContent = sesi.label;
     document.getElementById('tv-sesi-time').textContent = `${formatJam(sesi.mulai)} – ${formatJam(sesi.selesai)} WIB`;
+    document.getElementById('tv-names-grid').innerHTML = filtered.length
+      ? filtered.map((n,i) => {
+          const sudah = getStatusNama(sesi.id, n);
+          const telat = isLewatBatas(sesi) && !sudah;
+          return `
+            <div class="tv-name-chip" style="${sudah ? 'border-color:#1D9E75;background:rgba(29,158,117,0.1);' : telat ? 'border-color:#ff4444;background:rgba(255,68,68,0.1);' : ''}">
+              <div class="tv-name-num" style="${sudah ? 'color:#1D9E75;' : telat ? 'color:#ff4444;' : ''}">${sudah ? '✓ SELESAI' : telat ? '⚠ BELUM PIKET' : `SANTRI ${String(i+1).padStart(2,'0')}`}</div>
+              <div class="tv-name-text" style="${sudah ? 'color:#1D9E75;' : telat ? 'color:#ff4444;' : ''}">${n}</div>
+            </div>
+          `;
+        }).join('')
+      : '<div style="color:rgba(255,255,255,0.3)">Belum ada nama untuk hari ini.</div>';
     document.getElementById('tv-countdown').innerHTML = !isActive ? `Dimulai dalam <span>${mnitLagi} menit</span>` : '';
 
     if (isActive && sesi.id !== lastAnnouncedSesi && nowMin === sesi.mulai) {
@@ -476,7 +422,6 @@
   }
 
   async function renderKonfirmasi() {
-    const key = weekKey(0);
     const hari = getTodayHari();
     const row = cachedData?.find(r => r.sesi === hari);
     const names = row ? JSON.parse(row.names).filter(n => n.trim()) : [];
