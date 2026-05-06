@@ -438,12 +438,22 @@ const LAT = -6.3741;
     if (!allItems.length) return;
     idleIndex = idleIndex % allItems.length;
     const item = allItems[idleIndex];
+
+    const isVideo = item.type === 'video';
+
     document.querySelectorAll('.idle-video').forEach((el, i) => {
-      const isActive = item.type === 'video' && videos[i]?.url === item.url;
-      el.classList.toggle('active', isActive);
-      if (isActive) el.play().catch(()=>{});
+      const active = isVideo && videos[i]?.url === item.url;
+      el.classList.toggle('active', active);
+      if (active) el.play().catch(()=>{});
       else { el.pause(); el.currentTime = 0; }
     });
+
+    const content = document.getElementById('idle-content');
+    if (content) content.style.display = isVideo ? 'none' : 'flex';
+
+    const overlay = document.querySelector('.idle-overlay');
+    if (overlay) overlay.style.opacity = isVideo ? '0' : '1';
+
     const qEl = document.getElementById('idle-quote');
     if (qEl) {
       qEl.innerHTML = item.type === 'quote' ? `
@@ -451,8 +461,10 @@ const LAT = -6.3741;
         ${item.author ? `<div class="idle-quote-author">— ${item.author}</div>` : ''}
       ` : '';
     }
+
     const dots = document.getElementById('idle-dots');
     if (dots) dots.innerHTML = allItems.map((_,i) => `<div class="idle-dot ${i===idleIndex?'active':''}"></div>`).join('');
+
     idleIndex++;
   }
 
