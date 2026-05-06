@@ -459,7 +459,20 @@ const LAT = -6.3741;
     if (dt) dt.textContent = now.toLocaleDateString('id-ID', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
   }
 
-  function renderDisplay() {
+  function renderDisplay() {const activeSholat = getActiveSholat();
+    if (activeSholat) {
+      if (idleTimer) { clearInterval(idleTimer); idleTimer = null; }
+      if (haditsTimer) { clearInterval(haditsTimer); haditsTimer = null; }
+      idleBuilt = false;
+      renderSholatDisplay(activeSholat);
+      return;
+    }
+
+    const sholatPanel = document.getElementById('sholat-panel');
+    if (sholatPanel) {
+      if (sholatHaditsTimer) { clearInterval(sholatHaditsTimer); sholatHaditsTimer = null; }
+      idleBuilt = false;
+    }
     const now = new Date();
     const nowMin = getNowMin();
     const timeStr = now.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
@@ -670,9 +683,11 @@ const LAT = -6.3741;
   }
 
   loadDisplay().then(() => {
+    loadJadwalSholat();
     renderDisplay();
     setInterval(renderDisplay, 1000);
     setInterval(loadDisplay, 15000);
+    setInterval(loadJadwalSholat, 60*60*1000);
   });
 </script>
 </body>
