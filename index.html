@@ -246,6 +246,11 @@ const LAT = -6.3741;
     const badgeText = isPre ? `${active.countdown} menit menuju adzan` : `Iqomah dalam ${active.countdown} menit`;
     const titleText = isPre ? `Bersiap untuk sholat ${nama}` : `Sholat ${nama}`;
 
+    const nowSec = now.getSeconds();
+    const totalSec = active.countdown * 60 - nowSec;
+    const mm = String(Math.floor(totalSec / 60)).padStart(2,'0');
+    const ss = String(totalSec % 60).padStart(2,'0');
+
     const hadits = HADITS_SHOLAT[sholatHaditsIndex % HADITS_SHOLAT.length];
 
     const needsRebuild = !document.getElementById('sholat-panel');
@@ -262,10 +267,10 @@ const LAT = -6.3741;
             <div style="font-size:13px;color:rgba(255,255,255,0.5);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:1rem;" id="sholat-time">${timeStr}</div>
             <div id="sholat-badge" style="font-size:13px;background:rgba(255,255,255,0.12);border:0.5px solid rgba(255,255,255,0.2);border-radius:20px;padding:6px 18px;color:rgba(255,255,255,0.8);margin-bottom:1.5rem;">${badgeText}</div>
             <div id="sholat-title" style="font-size:48px;font-weight:200;color:white;letter-spacing:0.03em;margin-bottom:0.5rem;">${titleText}</div>
-            <div id="sholat-countdown" style="font-size:72px;font-weight:100;color:#9FE1CB;letter-spacing:0.05em;margin-bottom:2rem;">${String(active.countdown).padStart(2,'0')}:00</div>
+            <div id="sholat-countdown" style="font-size:72px;font-weight:100;color:#9FE1CB;letter-spacing:0.05em;margin-bottom:2rem;">${mm}:${ss}</div>
             <div style="max-width:600px;border-top:0.5px solid rgba(255,255,255,0.15);padding-top:1.5rem;">
-              <div id="sholat-hadits" style="font-size:18px;font-style:italic;color:rgba(255,255,255,0.8);line-height:1.7;">"${hadits.text}"</div>
-              <div id="sholat-source" style="font-size:13px;color:rgba(255,255,255,0.4);margin-top:8px;">${hadits.source}</div>
+              <div id="sholat-hadits" style="font-size:18px;font-style:italic;color:rgba(255,255,255,0.8);line-height:1.7;transition:opacity 0.3s;">"${hadits.text}"</div>
+              <div id="sholat-source" style="font-size:13px;color:rgba(255,255,255,0.4);margin-top:8px;transition:opacity 0.3s;">${hadits.source}</div>
             </div>
           </div>
         </div>
@@ -284,10 +289,6 @@ const LAT = -6.3741;
       document.getElementById('sholat-time').textContent = timeStr;
       document.getElementById('sholat-badge').textContent = badgeText;
       document.getElementById('sholat-title').textContent = titleText;
-     const nowSec = new Date().getSeconds();
-      const totalSec = active.countdown * 60 - nowSec;
-      const mm = String(Math.floor(totalSec / 60)).padStart(2,'0');
-      const ss = String(totalSec % 60).padStart(2,'0');
       document.getElementById('sholat-countdown').textContent = `${mm}:${ss}`;
       document.getElementById('sholat-bg').src = bg;
     }
