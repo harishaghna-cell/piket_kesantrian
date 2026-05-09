@@ -71,7 +71,6 @@
     .content-input-wide { width: 100%; background: #111; border: 0.5px solid #333; border-radius: 8px; padding: 8px 12px; color: white; font-size: 13px; font-family: inherit; margin-bottom: 8px; }
     .del-btn { background: #2a1a1a; border: 0.5px solid #553333; color: #ff6666; border-radius: 8px; padding: 7px 12px; cursor: pointer; font-size: 13px; flex-shrink: 0; }
     .add-btn { background: #1a2a1a; border: 0.5px solid #335533; color: #66cc66; border-radius: 8px; padding: 7px 14px; cursor: pointer; font-size: 13px; margin-top: 4px; }
-
     .konfirmasi-block { background: #1a1a1a; border: 0.5px solid #333; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
     .konfirmasi-sesi-title { font-size: 14px; font-weight: 500; color: #5DCAA5; margin-bottom: 1rem; }
     .konfirmasi-name-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 0.5px solid #222; }
@@ -116,9 +115,7 @@
     <button class="save-btn" onclick="saveAll()">Simpan jadwal minggu ini</button>
     <div class="status-msg" id="status-msg"></div>
   </div>
-  <div id="tab-konfirmasi" style="display:none;">
-    <div id="konfirmasi-list"></div>
-  </div>
+  <div id="tab-konfirmasi" style="display:none;"><div id="konfirmasi-list"></div></div>
   <div id="tab-konten" style="display:none;">
     <div class="content-block">
       <div class="content-block-title">Nasehat / Quotes</div>
@@ -176,10 +173,7 @@
   const LNG = 106.8958;
   const IQOMAH_MENIT = 10;
 
-  const SHOLAT_NAMES = {
-    Fajr: 'Subuh', Dhuhr: 'Dzuhur', Asr: 'Ashar', Maghrib: 'Maghrib', Isha: 'Isya'
-  };
-
+  const SHOLAT_NAMES = { Fajr: 'Subuh', Dhuhr: 'Dzuhur', Asr: 'Ashar', Maghrib: 'Maghrib', Isha: 'Isya' };
   const SHOLAT_BG = {
     Fajr:    'https://images.unsplash.com/photo-1542816417-0983c9c9ad53?w=1920&q=80',
     Dhuhr:   'https://images.unsplash.com/photo-1564769625905-50e93615e769?w=1920&q=80',
@@ -187,7 +181,6 @@
     Maghrib: 'https://images.unsplash.com/photo-1519817914152-22d216bb9170?w=1920&q=80',
     Isha:    'https://images.unsplash.com/photo-1542816417-0983c9c9ad53?w=1920&q=80',
   };
-
   const HADITS_SHOLAT = [
     { text: 'Sholat adalah tiang agama. Barangsiapa mendirikannya, maka ia telah menegakkan agama.', source: 'HR. Baihaqi' },
     { text: 'Amalan yang pertama kali dihisab dari seorang hamba pada hari kiamat adalah sholatnya.', source: 'HR. Abu Dawud' },
@@ -199,24 +192,13 @@
 
   const HARI_JS = ['minggu','senin','selasa','rabu','kamis','jumat','sabtu'];
 
-  let weekOffset = 0;
-  let adminData = {};
-  let isAdmin = false;
-  let lastAnnouncedSesi = null;
-  let cachedData = null;
-  let statusData = {};
-  let quotes = [];
-  let videos = [];
-  let idleIndex = 0;
-  let idleTimer = null;
-  let idleBuilt = false;
-  let haditsIndex = 0;
-  let haditsTimer = null;
-  let jadwalSholat = null;
-  let sholatHaditsIndex = 0;
-  let sholatHaditsTimer = null;
-  let videoJedaMode = false;
-  let videoJedaTimer = null;
+  let weekOffset = 0, adminData = {}, isAdmin = false;
+  let lastAnnouncedSesi = null, cachedData = null, statusData = {};
+  let quotes = [], videos = [];
+  let idleIndex = 0, idleTimer = null, idleBuilt = false;
+  let haditsIndex = 0, haditsTimer = null;
+  let jadwalSholat = null, sholatHaditsIndex = 0, sholatHaditsTimer = null;
+  let videoJedaMode = false, videoJedaTimer = null;
 
   function weekKey(offset=0) {
     const d = new Date();
@@ -236,56 +218,53 @@
 
   function getTodayHari() { return HARI_JS[new Date().getDay()]; }
   function getNowMin() { const n = new Date(); return n.getHours()*60 + n.getMinutes(); }
-
-  function getDisplaySesi() {
-    const now = getNowMin();
-    for (const s of SESI) {
-      if (now >= s.pengumuman && now < s.selesai) return s;
-    }
-    return null;
-  }
-
-  function formatJam(min) {
-    return `${String(Math.floor(min/60)).padStart(2,'0')}.${String(min%60).padStart(2,'0')}`;
-  }
-
+  function formatJam(min) { return `${String(Math.floor(min/60)).padStart(2,'0')}.${String(min%60).padStart(2,'0')}`; }
   function isLewatBatas(sesi) { return getNowMin() >= sesi.selesai - BATAS_MENIT; }
   function getStatusNama(sesiId, nama) { return statusData[`${sesiId}__${nama}`] || false; }
 
-  async function toggleStatus(sesiId, nama) {
-    const key = weekKey(0);
-    const hari = getTodayHari();
-    const newVal = !getStatusNama(sesiId, nama);
-    statusData[`${sesiId}__${nama}`] = newVal;
-    await sb.from('status_piket').upsert({
-      week_key: key, hari, sesi_id: sesiId, nama, selesai: newVal
-    }, { onConflict: 'week_key,hari,sesi_id,nama' });
-    renderKonfirmasi();
+  function getDisplaySesi() {
+    const now = getNowMin();
+    for (const s of SESI) { if (now >= s.pengumuman && now < s.selesai) return s; }
+    return null;
   }
 
+  // ===================== HELPER: sembunyikan/tampilkan elemen idle saat video =====================
+  function setVideoMode(on) {
+    const content = document.getElementById('idle-content');
+    const overlay = document.querySelector('.idle-overlay');
+    const logo = document.querySelector('.idle-logo');
+    const videoOverlay = document.getElementById('video-overlay');
+    if (on) {
+      if (content) content.style.cssText = 'display:none!important';
+      if (logo) logo.style.cssText = 'display:none!important';
+      if (overlay) overlay.style.opacity = '0';
+      if (videoOverlay) videoOverlay.style.display = 'flex';
+    } else {
+      if (content) content.style.cssText = '';
+      if (logo) logo.style.cssText = '';
+      if (overlay) overlay.style.opacity = '1';
+      if (videoOverlay) videoOverlay.style.display = 'none';
+    }
+  }
+
+  // ===================== SHOLAT =====================
   async function loadJadwalSholat() {
     try {
-      const today = new Date();
-      const d = today.getDate(), m = today.getMonth()+1, y = today.getFullYear();
-      const res = await fetch(`https://api.aladhan.com/v1/timings/${d}-${m}-${y}?latitude=${LAT}&longitude=${LNG}&method=11`);
-      const json = await res.json();
-      jadwalSholat = json.data.timings;
+      const t = new Date();
+      const res = await fetch(`https://api.aladhan.com/v1/timings/${t.getDate()}-${t.getMonth()+1}-${t.getFullYear()}?latitude=${LAT}&longitude=${LNG}&method=11`);
+      jadwalSholat = (await res.json()).data.timings;
     } catch(e) { console.error('Gagal load jadwal sholat:', e); }
   }
 
   function getActiveSholat() {
     if (!jadwalSholat) return null;
-    const now = new Date();
-    const nowMin = now.getHours()*60 + now.getMinutes();
+    const nowMin = new Date().getHours()*60 + new Date().getMinutes();
     for (const key of ['Fajr','Dhuhr','Asr','Maghrib','Isha']) {
       const [h, mn] = jadwalSholat[key].split(':').map(Number);
       const sholatMin = h*60 + mn;
-      const preMin = sholatMin - 5;
-      const iqomahMin = sholatMin + IQOMAH_MENIT;
-      if (nowMin >= preMin && nowMin < iqomahMin) {
+      if (nowMin >= sholatMin-5 && nowMin < sholatMin+IQOMAH_MENIT) {
         const phase = nowMin < sholatMin ? 'pre' : 'iqomah';
-        const countdown = phase === 'pre' ? sholatMin - nowMin : iqomahMin - nowMin;
-        return { key, phase, countdown, sholatMin, iqomahMin };
+        return { key, phase, countdown: phase==='pre' ? sholatMin-nowMin : sholatMin+IQOMAH_MENIT-nowMin };
       }
     }
     return null;
@@ -293,30 +272,27 @@
 
   function renderSholatDisplay(active) {
     const panel = document.getElementById('display-panel');
-    const bg = SHOLAT_BG[active.key];
-    const nama = SHOLAT_NAMES[active.key];
     const now = new Date();
     const timeStr = now.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+    const nama = SHOLAT_NAMES[active.key];
     const isPre = active.phase === 'pre';
     const badgeText = isPre ? `${active.countdown} menit menuju adzan` : `Iqomah dalam ${active.countdown} menit`;
     const titleText = isPre ? `Bersiap untuk sholat ${nama}` : `Sholat ${nama}`;
-    const nowSec = now.getSeconds();
-    const totalSec = active.countdown * 60 - nowSec;
-    const mm = String(Math.floor(totalSec / 60)).padStart(2,'0');
-    const ss = String(totalSec % 60).padStart(2,'0');
+    const totalSec = active.countdown * 60 - now.getSeconds();
+    const mm = String(Math.floor(totalSec/60)).padStart(2,'0');
+    const ss = String(totalSec%60).padStart(2,'0');
     const hadits = HADITS_SHOLAT[sholatHaditsIndex % HADITS_SHOLAT.length];
 
-    const needsRebuild = !document.getElementById('sholat-panel');
-    if (needsRebuild) {
+    if (!document.getElementById('sholat-panel')) {
       if (haditsTimer) clearInterval(haditsTimer);
       if (idleTimer) clearInterval(idleTimer);
       idleBuilt = false;
       panel.innerHTML = `
         <div id="sholat-panel" style="position:relative;min-height:100vh;overflow:hidden;background:#0a1020;">
-          <img id="sholat-bg" src="${bg}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.35;transition:opacity 1s;" />
+          <img id="sholat-bg" src="${SHOLAT_BG[active.key]}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.35;" />
           <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,0.3),rgba(0,0,0,0.7));"></div>
           <div style="position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:2rem;text-align:center;">
-            <div style="font-size:13px;color:rgba(255,255,255,0.5);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:1rem;" id="sholat-time">${timeStr}</div>
+            <div id="sholat-time" style="font-size:13px;color:rgba(255,255,255,0.5);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:1rem;">${timeStr}</div>
             <div id="sholat-badge" style="font-size:13px;background:rgba(255,255,255,0.12);border:0.5px solid rgba(255,255,255,0.2);border-radius:20px;padding:6px 18px;color:rgba(255,255,255,0.8);margin-bottom:1.5rem;">${badgeText}</div>
             <div id="sholat-title" style="font-size:48px;font-weight:200;color:white;letter-spacing:0.03em;margin-bottom:0.5rem;">${titleText}</div>
             <div id="sholat-countdown" style="font-size:72px;font-weight:100;color:#9FE1CB;letter-spacing:0.05em;margin-bottom:2rem;">${mm}:${ss}</div>
@@ -325,8 +301,7 @@
               <div id="sholat-source" style="font-size:13px;color:rgba(255,255,255,0.4);margin-top:8px;transition:opacity 0.3s;">${hadits.source}</div>
             </div>
           </div>
-        </div>
-      `;
+        </div>`;
       sholatHaditsTimer = setInterval(() => {
         sholatHaditsIndex++;
         const h = HADITS_SHOLAT[sholatHaditsIndex % HADITS_SHOLAT.length];
@@ -340,60 +315,11 @@
       document.getElementById('sholat-badge').textContent = badgeText;
       document.getElementById('sholat-title').textContent = titleText;
       document.getElementById('sholat-countdown').textContent = `${mm}:${ss}`;
-      document.getElementById('sholat-bg').src = bg;
+      document.getElementById('sholat-bg').src = SHOLAT_BG[active.key];
     }
   }
 
-  async function loadDisplay() {
-    const key = weekKey(0);
-    const hari = getTodayHari();
-    const { data } = await sb.from('jadwal_piket').select('*').eq('week_key', key);
-    cachedData = data;
-    const { data: sd } = await sb.from('status_piket').select('*').eq('week_key', key).eq('hari', hari);
-    statusData = {};
-    if (sd) sd.forEach(r => { statusData[`${r.sesi_id}__${r.nama}`] = r.selesai; });
-    const { data: kq } = await sb.from('jadwal_piket').select('*').eq('week_key', 'konten_idle').eq('sesi', 'quotes').maybeSingle();
-    if (kq) { try { quotes = JSON.parse(kq.names); } catch(e) { quotes = []; } }
-    const { data: kv } = await sb.from('jadwal_piket').select('*').eq('week_key', 'konten_idle').eq('sesi', 'videos').maybeSingle();
-    if (kv) { try { videos = JSON.parse(kv.names); } catch(e) { videos = []; } }
-  }
-
-  async function announce(sesi, names) {
-    const filtered = names.filter(n => n.trim());
-    if (!filtered.length) return;
-    const text = `انتبهوا جميعاً. حان الآن وقت ${sesi.nama}. الطلاب المكلفون بالنظافة هم: ${filtered.join('، ')}. يرجى التوجه فوراً إلى قاعة الطعام. جزاكم الله خيراً.`;
-    try {
-      const r = await fetch('/.netlify/functions/tts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, voice_id: ELEVENLABS_VOICE })
-      });
-      const b = await r.blob();
-      new Audio(URL.createObjectURL(b)).play();
-    } catch(e) { console.error('TTS error:', e); }
-  }
-
-  function startHaditsRotation() {
-    if (haditsTimer) clearInterval(haditsTimer);
-    haditsIndex = 0;
-    updateHadits();
-    haditsTimer = setInterval(updateHadits, 5000);
-  }
-
-  function updateHadits() {
-    const el = document.getElementById('tv-hadits-text');
-    const src = document.getElementById('tv-hadits-source');
-    if (!el || !src) return;
-    const h = HADITS[haditsIndex % HADITS.length];
-    el.style.opacity = 0; src.style.opacity = 0;
-    setTimeout(() => {
-      el.textContent = `"${h.text}"`;
-      src.textContent = h.source;
-      el.style.opacity = 1; src.style.opacity = 1;
-    }, 300);
-    haditsIndex++;
-  }
-
+  // ===================== IDLE =====================
   function buildIdle() {
     const panel = document.getElementById('display-panel');
     panel.innerHTML = `
@@ -407,246 +333,117 @@
           <div class="idle-quote" id="idle-quote"></div>
           <div class="idle-dots" id="idle-dots"></div>
         </div>
-<div class="idle-pesantren">Ma'had Tahfizh Al Qur'an Abdullah Ibnu Mas'ud</div>
-<div id="video-overlay" style="display:none;position:absolute;top:1.5rem;left:0;right:0;z-index:3;padding:0 2rem;flex-direction:row;justify-content:space-between;align-items:center;">
-  <img src="${LOGO_URL}" style="height:52px;filter:brightness(0) invert(1);opacity:0.85;" />
-  <div style="text-align:right;">
-    <div id="video-clock" style="font-size:28px;font-weight:200;color:white;letter-spacing:0.05em;"></div>
-    <div id="video-date" style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:2px;"></div>
-  </div>
-</div>
-    `;
+        <div class="idle-pesantren">Ma'had Tahfizh Al Qur'an Abdullah Ibnu Mas'ud</div>
+        <div id="video-overlay" style="display:none;position:absolute;top:1.5rem;left:0;right:0;z-index:3;padding:0 2rem;flex-direction:row;justify-content:space-between;align-items:center;">
+          <img src="${LOGO_URL}" style="height:52px;filter:brightness(0) invert(1);opacity:0.85;" />
+          <div style="text-align:right;">
+            <div id="video-clock" style="font-size:28px;font-weight:200;color:white;letter-spacing:0.05em;"></div>
+            <div id="video-date" style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:2px;"></div>
+          </div>
+        </div>
+      </div>`;
     idleBuilt = true;
     idleIndex = 0;
     videoJedaMode = false;
     if (idleTimer) clearInterval(idleTimer);
-    function showIdleSlide() {
-    if (videoJedaMode) return;
-
-    const allVideos = videos;
-    const allQuotes = quotes;
-    if (!allVideos.length && !allQuotes.length) return;
-
-    if (idleIndex >= allVideos.length + allQuotes.length && allVideos.length > 0) {
-      videoJedaMode = true;
-      document.querySelectorAll('.idle-video').forEach(el => {
-        el.classList.remove('active'); el.pause(); el.currentTime = 0;
-      });
-      const content = document.getElementById('idle-content');
-      const overlay = document.querySelector('.idle-overlay');
-      const logo = document.querySelector('.idle-logo');
-      const videoOverlay = document.getElementById('video-overlay');
-      if (content) content.setAttribute('style', '');
-      if (logo) logo.setAttribute('style', '');
-      if (overlay) overlay.style.opacity = '1';
-      if (videoOverlay) videoOverlay.style.display = 'none';
-      if (videoJedaTimer) clearTimeout(videoJedaTimer);
-      videoJedaTimer = setTimeout(() => {
-        videoJedaMode = false;
-        idleIndex = 0;
-        showIdleSlide();
-      }, 5 * 60 * 1000);
-      return;
-    }
-
-    if (idleIndex < allVideos.length) {
-      document.querySelectorAll('.idle-video').forEach((el, i) => {
-        const active = i === idleIndex;
-        el.classList.toggle('active', active);
-        if (active) { el.muted = false; el.play().catch(()=>{}); }
-        else { el.pause(); el.currentTime = 0; }
-      });
-      const content = document.getElementById('idle-content');
-      const overlay = document.querySelector('.idle-overlay');
-      const logo = document.querySelector('.idle-logo');
-      const videoOverlay = document.getElementById('video-overlay');
-      if (content) content.setAttribute('style', 'display:none!important');
-      if (logo) logo.setAttribute('style', 'display:none!important');
-      if (overlay) overlay.style.opacity = '0';
-      if (videoOverlay) videoOverlay.style.display = 'flex';
-      idleIndex++;
-    } else if (allQuotes.length) {
-      document.querySelectorAll('.idle-video').forEach(el => {
-        el.classList.remove('active'); el.pause(); el.currentTime = 0;
-      });
-      const content = document.getElementById('idle-content');
-      const overlay = document.querySelector('.idle-overlay');
-      const logo = document.querySelector('.idle-logo');
-      const videoOverlay = document.getElementById('video-overlay');
-      if (content) content.setAttribute('style', '');
-      if (logo) logo.setAttribute('style', '');
-      if (overlay) overlay.style.opacity = '1';
-      if (videoOverlay) videoOverlay.style.display = 'none';
-      const qi = (idleIndex - allVideos.length) % allQuotes.length;
-      const q = allQuotes[qi];
-      const qEl = document.getElementById('idle-quote');
-      if (qEl) qEl.innerHTML = `<div class="idle-quote-text">"${q.text}"</div>${q.author ? `<div class="idle-quote-author">— ${q.author}</div>` : ''}`;
-      idleIndex++;
-    } else {
-      videoJedaMode = true;
-      document.querySelectorAll('.idle-video').forEach(el => {
-        el.classList.remove('active'); el.pause(); el.currentTime = 0;
-      });
-      const content = document.getElementById('idle-content');
-      const overlay = document.querySelector('.idle-overlay');
-      const logo = document.querySelector('.idle-logo');
-      const videoOverlay = document.getElementById('video-overlay');
-      if (content) content.setAttribute('style', '');
-      if (logo) logo.setAttribute('style', '');
-      if (overlay) overlay.style.opacity = '1';
-      if (videoOverlay) videoOverlay.style.display = 'none';
-      if (videoJedaTimer) clearTimeout(videoJedaTimer);
-      videoJedaTimer = setTimeout(() => {
-        videoJedaMode = false;
-        idleIndex = 0;
-        showIdleSlide();
-      }, 5 * 60 * 1000);
-    }
-  }
+    showIdleSlide();
     idleTimer = setInterval(() => {
-      const activeVid = document.querySelector('.idle-video.active');
-      if (!activeVid || activeVid.ended || activeVid.paused) {
-        showIdleSlide();
-      }
+      const av = document.querySelector('.idle-video.active');
+      if (!av || av.ended || av.paused) showIdleSlide();
     }, 1000);
   }
 
   function showIdleSlide() {
     if (videoJedaMode) return;
-
-    const allVideos = videos;
-    const allQuotes = quotes;
+    const allVideos = videos, allQuotes = quotes;
     if (!allVideos.length && !allQuotes.length) return;
 
-    if (idleIndex >= allVideos.length + allQuotes.length && allVideos.length > 0) {
+    const total = allVideos.length + allQuotes.length;
+
+    if (idleIndex >= total) {
+      // Semua sudah diputar — masuk jeda
       videoJedaMode = true;
-      document.querySelectorAll('.idle-video').forEach(el => {
-        el.classList.remove('active'); el.pause(); el.currentTime = 0;
-      });
-      const content = document.getElementById('idle-content');
-      const overlay = document.querySelector('.idle-overlay');
-      const logo = document.querySelector('.idle-logo');
-      const videoOverlay = document.getElementById('video-overlay');
-      if (content) content.setAttribute('style', '');
-      if (logo) logo.setAttribute('style', '');
-      if (overlay) overlay.style.opacity = '1';
-      if (videoOverlay) videoOverlay.style.display = 'none';
+      document.querySelectorAll('.idle-video').forEach(el => { el.classList.remove('active'); el.pause(); el.currentTime=0; });
+      setVideoMode(false);
       if (videoJedaTimer) clearTimeout(videoJedaTimer);
-      videoJedaTimer = setTimeout(() => {
-        videoJedaMode = false;
-        idleIndex = 0;
-        showIdleSlide();
-      }, 5 * 60 * 1000);
+      videoJedaTimer = setTimeout(() => { videoJedaMode=false; idleIndex=0; showIdleSlide(); }, 5*60*1000);
       return;
     }
 
     if (idleIndex < allVideos.length) {
-      document.querySelectorAll('.idle-video').forEach((el, i) => {
+      // Putar video
+      document.querySelectorAll('.idle-video').forEach((el,i) => {
         const active = i === idleIndex;
         el.classList.toggle('active', active);
-        if (active) { el.muted = false; el.play().catch(()=>{}); }
-        else { el.pause(); el.currentTime = 0; }
+        if (active) { el.muted=false; el.play().catch(()=>{}); }
+        else { el.pause(); el.currentTime=0; }
       });
-      const content = document.getElementById('idle-content');
-      const overlay = document.querySelector('.idle-overlay');
-      const logo = document.querySelector('.idle-logo');
-      const videoOverlay = document.getElementById('video-overlay');
-      if (content) content.setAttribute('style', 'display:none!important');
-      if (logo) logo.setAttribute('style', 'display:none!important');
-      if (overlay) overlay.style.opacity = '0';
-      if (videoOverlay) videoOverlay.style.display = 'flex';
+      setVideoMode(true);
       idleIndex++;
-    } else if (allQuotes.length) {
-      document.querySelectorAll('.idle-video').forEach(el => {
-        el.classList.remove('active'); el.pause(); el.currentTime = 0;
-      });
-      const content = document.getElementById('idle-content');
-      const overlay = document.querySelector('.idle-overlay');
-      const logo = document.querySelector('.idle-logo');
-      const videoOverlay = document.getElementById('video-overlay');
-      if (content) content.setAttribute('style', '');
-      if (logo) logo.setAttribute('style', '');
-      if (overlay) overlay.style.opacity = '1';
-      if (videoOverlay) videoOverlay.style.display = 'none';
+    } else {
+      // Tampil quote
+      document.querySelectorAll('.idle-video').forEach(el => { el.classList.remove('active'); el.pause(); el.currentTime=0; });
+      setVideoMode(false);
       const qi = (idleIndex - allVideos.length) % allQuotes.length;
       const q = allQuotes[qi];
       const qEl = document.getElementById('idle-quote');
-      if (qEl) qEl.innerHTML = `<div class="idle-quote-text">"${q.text}"</div>${q.author ? `<div class="idle-quote-author">— ${q.author}</div>` : ''}`;
+      if (qEl) qEl.innerHTML = `<div class="idle-quote-text">"${q.text}"</div>${q.author?`<div class="idle-quote-author">— ${q.author}</div>`:''}`;
       idleIndex++;
-    } else {
-      videoJedaMode = true;
-      document.querySelectorAll('.idle-video').forEach(el => {
-        el.classList.remove('active'); el.pause(); el.currentTime = 0;
-      });
-      const content = document.getElementById('idle-content');
-      const overlay = document.querySelector('.idle-overlay');
-      const logo = document.querySelector('.idle-logo');
-      const videoOverlay = document.getElementById('video-overlay');
-      if (content) content.setAttribute('style', '');
-      if (logo) logo.setAttribute('style', '');
-      if (overlay) overlay.style.opacity = '1';
-      if (videoOverlay) videoOverlay.style.display = 'none';
-      if (videoJedaTimer) clearTimeout(videoJedaTimer);
-      videoJedaTimer = setTimeout(() => {
-        videoJedaMode = false;
-        idleIndex = 0;
-        showIdleSlide();
-      }, 5 * 60 * 1000);
     }
   }
+
   function updateIdleClock() {
     const now = new Date();
     const timeStr = now.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
     const dateStr = now.toLocaleDateString('id-ID', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
-    const activeVid = document.querySelector('.idle-video.active');
-    const isVideoActive = !!activeVid && !activeVid.paused && !videoJedaMode;
-
-    const content = document.getElementById('idle-content');
-    const overlay = document.querySelector('.idle-overlay');
-    const videoOverlay = document.getElementById('video-overlay');
-    const logo = document.querySelector('.idle-logo');
-    const cl = document.getElementById('idle-clock');
-    const dt = document.getElementById('idle-date');
+    const av = document.querySelector('.idle-video.active');
+    const isVideoActive = !!av && !av.paused && !videoJedaMode;
 
     if (isVideoActive) {
-      if (content) content.style.cssText = 'display:none!important';
-      if (overlay) overlay.style.opacity = '0';
-      if (logo) logo.style.cssText = 'display:none!important';
-      if (videoOverlay) {
-        videoOverlay.style.display = 'flex';
-        const vClock = document.getElementById('video-clock');
-        const vDate = document.getElementById('video-date');
-        if (vClock) vClock.textContent = timeStr;
-        if (vDate) vDate.textContent = dateStr;
-      }
+      setVideoMode(true);
+      const vClock = document.getElementById('video-clock');
+      const vDate = document.getElementById('video-date');
+      if (vClock) vClock.textContent = timeStr;
+      if (vDate) vDate.textContent = dateStr;
     } else {
-      if (content) content.style.cssText = '';
-      if (overlay) overlay.style.opacity = '1';
-      if (logo) logo.style.cssText = '';
-      if (videoOverlay) videoOverlay.style.display = 'none';
+      setVideoMode(false);
+      const cl = document.getElementById('idle-clock');
+      const dt = document.getElementById('idle-date');
       if (cl) cl.textContent = timeStr;
       if (dt) dt.textContent = dateStr;
     }
   }
 
+  // ===================== DISPLAY UTAMA =====================
+  async function loadDisplay() {
+    const key = weekKey(0), hari = getTodayHari();
+    const { data } = await sb.from('jadwal_piket').select('*').eq('week_key', key);
+    cachedData = data;
+    const { data: sd } = await sb.from('status_piket').select('*').eq('week_key', key).eq('hari', hari);
+    statusData = {};
+    if (sd) sd.forEach(r => { statusData[`${r.sesi_id}__${r.nama}`] = r.selesai; });
+    const { data: kq } = await sb.from('jadwal_piket').select('*').eq('week_key', 'konten_idle').eq('sesi', 'quotes').maybeSingle();
+    if (kq) { try { quotes = JSON.parse(kq.names); } catch(e) { quotes=[]; } }
+    const { data: kv } = await sb.from('jadwal_piket').select('*').eq('week_key', 'konten_idle').eq('sesi', 'videos').maybeSingle();
+    if (kv) { try { videos = JSON.parse(kv.names); } catch(e) { videos=[]; } }
+  }
+
   function renderDisplay() {
     const activeSholat = getActiveSholat();
     if (activeSholat) {
-      if (idleTimer) { clearInterval(idleTimer); idleTimer = null; }
-      if (haditsTimer) { clearInterval(haditsTimer); haditsTimer = null; }
+      if (idleTimer) { clearInterval(idleTimer); idleTimer=null; }
+      if (haditsTimer) { clearInterval(haditsTimer); haditsTimer=null; }
       idleBuilt = false;
       renderSholatDisplay(activeSholat);
       return;
     }
 
-    const sholatPanel = document.getElementById('sholat-panel');
-    if (sholatPanel) {
-      if (sholatHaditsTimer) { clearInterval(sholatHaditsTimer); sholatHaditsTimer = null; }
+    if (document.getElementById('sholat-panel')) {
+      if (sholatHaditsTimer) { clearInterval(sholatHaditsTimer); sholatHaditsTimer=null; }
       idleBuilt = false;
     }
 
-    const now = new Date();
-    const nowMin = getNowMin();
+    const now = new Date(), nowMin = getNowMin();
     const timeStr = now.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
     const dateStr = now.toLocaleDateString('id-ID', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
     const sesi = getDisplaySesi();
@@ -659,17 +456,15 @@
     }
 
     idleBuilt = false;
-    if (idleTimer) { clearInterval(idleTimer); idleTimer = null; }
+    if (idleTimer) { clearInterval(idleTimer); idleTimer=null; }
 
-    const todayHari = getTodayHari();
-    const row = cachedData?.find(r => r.sesi === todayHari);
+    const row = cachedData?.find(r => r.sesi === getTodayHari());
     const names = row ? JSON.parse(row.names) : [];
     const filtered = names.filter(n => n.trim());
     const isActive = nowMin >= sesi.mulai;
     const mnitLagi = sesi.mulai - nowMin;
 
-    const needsRebuild = !document.getElementById('tv-hadits-text');
-    if (needsRebuild) {
+    if (!document.getElementById('tv-hadits-text')) {
       panel.innerHTML = `
         <div class="tv-wrap">
           <div class="tv-top">
@@ -690,8 +485,7 @@
             <div class="tv-hadits-source" id="tv-hadits-source"></div>
           </div>
           <div class="tv-countdown" id="tv-countdown"></div>
-        </div>
-      `;
+        </div>`;
       startHaditsRotation();
     }
 
@@ -704,12 +498,10 @@
       ? filtered.map((n,i) => {
           const sudah = getStatusNama(sesi.id, n);
           const telat = isLewatBatas(sesi) && !sudah;
-          return `
-            <div class="tv-name-chip" style="${sudah ? 'border-color:#1D9E75;background:rgba(29,158,117,0.1);' : telat ? 'border-color:#ff4444;background:rgba(255,68,68,0.1);' : ''}">
-              <div class="tv-name-num" style="${sudah ? 'color:#1D9E75;' : telat ? 'color:#ff4444;' : ''}">${sudah ? '✓ SELESAI' : telat ? '⚠ BELUM PIKET' : `SANTRI ${String(i+1).padStart(2,'0')}`}</div>
-              <div class="tv-name-text" style="${sudah ? 'color:#1D9E75;' : telat ? 'color:#ff4444;' : ''}">${n}</div>
-            </div>
-          `;
+          return `<div class="tv-name-chip" style="${sudah?'border-color:#1D9E75;background:rgba(29,158,117,0.1);':telat?'border-color:#ff4444;background:rgba(255,68,68,0.1);':''}">
+            <div class="tv-name-num" style="${sudah?'color:#1D9E75;':telat?'color:#ff4444;':''}">${sudah?'✓ SELESAI':telat?'⚠ BELUM PIKET':`SANTRI ${String(i+1).padStart(2,'0')}`}</div>
+            <div class="tv-name-text" style="${sudah?'color:#1D9E75;':telat?'color:#ff4444;':''}">${n}</div>
+          </div>`;
         }).join('')
       : '<div style="color:rgba(255,255,255,0.3)">Belum ada nama untuk hari ini.</div>';
     document.getElementById('tv-countdown').innerHTML = !isActive ? `Dimulai dalam <span>${mnitLagi} menit</span>` : '';
@@ -720,6 +512,43 @@
     }
   }
 
+  // ===================== HADITS =====================
+  function startHaditsRotation() {
+    if (haditsTimer) clearInterval(haditsTimer);
+    haditsIndex = 0; updateHadits();
+    haditsTimer = setInterval(updateHadits, 5000);
+  }
+
+  function updateHadits() {
+    const el = document.getElementById('tv-hadits-text');
+    const src = document.getElementById('tv-hadits-source');
+    if (!el || !src) return;
+    const h = HADITS[haditsIndex % HADITS.length];
+    el.style.opacity=0; src.style.opacity=0;
+    setTimeout(() => { el.textContent=`"${h.text}"`; src.textContent=h.source; el.style.opacity=1; src.style.opacity=1; }, 300);
+    haditsIndex++;
+  }
+
+  // ===================== TTS =====================
+  async function announce(sesi, names) {
+    const filtered = names.filter(n => n.trim());
+    if (!filtered.length) return;
+    const text = `انتبهوا جميعاً. حان الآن وقت ${sesi.nama}. الطلاب المكلفون بالنظافة هم: ${filtered.join('، ')}. يرجى التوجه فوراً إلى قاعة الطعام. جزاكم الله خيراً.`;
+    try {
+      const r = await fetch('/.netlify/functions/tts', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({text, voice_id: ELEVENLABS_VOICE}) });
+      new Audio(URL.createObjectURL(await r.blob())).play();
+    } catch(e) { console.error('TTS error:', e); }
+  }
+
+  // ===================== KONFIRMASI =====================
+  async function toggleStatus(sesiId, nama) {
+    const key = weekKey(0), hari = getTodayHari();
+    const newVal = !getStatusNama(sesiId, nama);
+    statusData[`${sesiId}__${nama}`] = newVal;
+    await sb.from('status_piket').upsert({ week_key:key, hari, sesi_id:sesiId, nama, selesai:newVal }, { onConflict:'week_key,hari,sesi_id,nama' });
+    renderKonfirmasi();
+  }
+
   async function renderKonfirmasi() {
     const hari = getTodayHari();
     const row = cachedData?.find(r => r.sesi === hari);
@@ -727,26 +556,20 @@
     const nowMin = getNowMin();
     document.getElementById('konfirmasi-list').innerHTML = SESI.map(s => {
       const lewat = nowMin >= s.selesai - BATAS_MENIT;
-      return `
-        <div class="konfirmasi-block">
-          <div class="konfirmasi-sesi-title">${s.label} · ${formatJam(s.mulai)} – ${formatJam(s.selesai)} WIB</div>
-          ${names.length ? names.map(nama => {
-            const sudah = getStatusNama(s.id, nama);
-            const telat = lewat && !sudah;
-            return `
-              <div class="konfirmasi-name-row">
-                <span class="konfirmasi-name ${sudah ? 'selesai' : telat ? 'telat' : ''}">${nama}${sudah ? ' ✓' : telat ? ' ⚠️' : ''}</span>
-                <button class="centang-btn ${sudah ? 'sudah' : 'belum'}" onclick="toggleStatus('${s.id}', '${nama}')">
-                  ${sudah ? '✓ Selesai' : 'Tandai Selesai'}
-                </button>
-              </div>
-            `;
-          }).join('') : '<div style="color:#555;font-size:13px;">Belum ada nama untuk hari ini.</div>'}
-        </div>
-      `;
+      return `<div class="konfirmasi-block">
+        <div class="konfirmasi-sesi-title">${s.label} · ${formatJam(s.mulai)} – ${formatJam(s.selesai)} WIB</div>
+        ${names.length ? names.map(nama => {
+          const sudah = getStatusNama(s.id, nama), telat = lewat && !sudah;
+          return `<div class="konfirmasi-name-row">
+            <span class="konfirmasi-name ${sudah?'selesai':telat?'telat':''}">${nama}${sudah?' ✓':telat?' ⚠️':''}</span>
+            <button class="centang-btn ${sudah?'sudah':'belum'}" onclick="toggleStatus('${s.id}','${nama}')">${sudah?'✓ Selesai':'Tandai Selesai'}</button>
+          </div>`;
+        }).join('') : '<div style="color:#555;font-size:13px;">Belum ada nama untuk hari ini.</div>'}
+      </div>`;
     }).join('');
   }
 
+  // ===================== ADMIN =====================
   async function loadAdmin() {
     const key = weekKey(weekOffset);
     document.getElementById('admin-week-label').textContent = weekRangeLabel(weekOffset);
@@ -762,22 +585,14 @@
   function renderAdmin() {
     const todayHari = weekOffset === 0 ? getTodayHari() : '';
     document.getElementById('admin-hari-list').innerHTML = HARI.map(h => `
-      <div class="hari-block ${h.id === todayHari ? 'today' : ''}">
-        <div class="hari-title">
-          ${h.nama}
-          ${h.id === todayHari ? '<span class="hari-badge">Hari ini</span>' : ''}
-        </div>
+      <div class="hari-block ${h.id===todayHari?'today':''}">
+        <div class="hari-title">${h.nama}${h.id===todayHari?'<span class="hari-badge">Hari ini</span>':''}</div>
         <div style="margin-top:10px;">
-          ${adminData[h.id].map((n,i) => `
-            <input class="name-input" data-hari="${h.id}" data-idx="${i}" value="${n}" placeholder="Nama santri ${i+1}..." />
-          `).join('')}
+          ${adminData[h.id].map((n,i) => `<input class="name-input" data-hari="${h.id}" data-idx="${i}" value="${n}" placeholder="Nama santri ${i+1}..." />`).join('')}
         </div>
-      </div>
-    `).join('');
+      </div>`).join('');
     document.querySelectorAll('.name-input').forEach(inp => {
-      inp.addEventListener('input', e => {
-        adminData[e.target.dataset.hari][+e.target.dataset.idx] = e.target.value;
-      });
+      inp.addEventListener('input', e => { adminData[e.target.dataset.hari][+e.target.dataset.idx] = e.target.value; });
     });
   }
 
@@ -789,38 +604,35 @@
           <input class="content-input-wide" placeholder="Sumber / penulis (opsional)" value="${q.author||''}" oninput="quotes[${i}].author=this.value" />
         </div>
         <button class="del-btn" onclick="quotes.splice(${i},1);renderKonten()">Hapus</button>
-      </div>
-    `).join('');
+      </div>`).join('');
     document.getElementById('videos-list').innerHTML = videos.map((v,i) => `
       <div class="content-row">
         <input class="content-input" placeholder="URL Supabase Storage..." value="${v.url||''}" oninput="videos[${i}].url=this.value" />
         <button class="del-btn" onclick="videos.splice(${i},1);renderKonten()">Hapus</button>
-      </div>
-    `).join('');
+      </div>`).join('');
   }
 
-  function addQuote() { quotes.push({ text: '', author: '' }); renderKonten(); }
-  function addVideo() { videos.push({ url: '' }); renderKonten(); }
+  function addQuote() { quotes.push({text:'',author:''}); renderKonten(); }
+  function addVideo() { videos.push({url:''}); renderKonten(); }
 
   async function saveAll() {
-    const key = weekKey(weekOffset);
-    const msg = document.getElementById('status-msg');
+    const key = weekKey(weekOffset), msg = document.getElementById('status-msg');
     msg.textContent = 'Menyimpan...';
     for (const h of HARI) {
-      await sb.from('jadwal_piket').upsert({ week_key: key, sesi: h.id, names: JSON.stringify(adminData[h.id]) }, { onConflict: 'week_key,sesi' });
+      await sb.from('jadwal_piket').upsert({ week_key:key, sesi:h.id, names:JSON.stringify(adminData[h.id]) }, { onConflict:'week_key,sesi' });
     }
     msg.textContent = 'Tersimpan!';
-    setTimeout(() => msg.textContent = '', 2000);
+    setTimeout(() => msg.textContent='', 2000);
     await loadDisplay();
   }
 
   async function saveKonten() {
     const msg = document.getElementById('status-konten');
     msg.textContent = 'Menyimpan...';
-    await sb.from('jadwal_piket').upsert({ week_key: 'konten_idle', sesi: 'quotes', names: JSON.stringify(quotes) }, { onConflict: 'week_key,sesi' });
-    await sb.from('jadwal_piket').upsert({ week_key: 'konten_idle', sesi: 'videos', names: JSON.stringify(videos) }, { onConflict: 'week_key,sesi' });
+    await sb.from('jadwal_piket').upsert({ week_key:'konten_idle', sesi:'quotes', names:JSON.stringify(quotes) }, { onConflict:'week_key,sesi' });
+    await sb.from('jadwal_piket').upsert({ week_key:'konten_idle', sesi:'videos', names:JSON.stringify(videos) }, { onConflict:'week_key,sesi' });
     msg.textContent = 'Tersimpan!';
-    setTimeout(() => msg.textContent = '', 2000);
+    setTimeout(() => msg.textContent='', 2000);
     idleBuilt = false;
     await loadDisplay();
   }
@@ -829,10 +641,10 @@
     document.querySelectorAll('.admin-tab').forEach((t,i) => {
       t.classList.toggle('active', (i===0&&tab==='piket')||(i===1&&tab==='konfirmasi')||(i===2&&tab==='konten'));
     });
-    document.getElementById('tab-piket').style.display = tab==='piket' ? 'block' : 'none';
-    document.getElementById('tab-konfirmasi').style.display = tab==='konfirmasi' ? 'block' : 'none';
-    document.getElementById('tab-konten').style.display = tab==='konten' ? 'block' : 'none';
-    document.getElementById('week-nav').style.display = tab==='piket' ? 'flex' : 'none';
+    document.getElementById('tab-piket').style.display = tab==='piket'?'block':'none';
+    document.getElementById('tab-konfirmasi').style.display = tab==='konfirmasi'?'block':'none';
+    document.getElementById('tab-konten').style.display = tab==='konten'?'block':'none';
+    document.getElementById('week-nav').style.display = tab==='piket'?'flex':'none';
     if (tab==='piket') loadAdmin();
     if (tab==='konfirmasi') renderKonfirmasi();
     if (tab==='konten') renderKonten();
@@ -843,21 +655,21 @@
   function activateSound() {
     document.getElementById('sound-overlay').style.display = 'none';
     document.getElementById('display-panel').style.pointerEvents = 'auto';
-    document.querySelectorAll('.idle-video').forEach(v => { v.muted = false; });
+    document.querySelectorAll('.idle-video').forEach(v => { v.muted=false; });
   }
 
   function toggleMode() {
     isAdmin = !isAdmin;
-    document.getElementById('display-panel').style.display = isAdmin ? 'none' : 'block';
-    document.getElementById('admin-panel').style.display = isAdmin ? 'block' : 'none';
-    document.querySelector('.toggle-btn').textContent = isAdmin ? '📺 Tampilan TV' : '⚙️ Admin';
+    document.getElementById('display-panel').style.display = isAdmin?'none':'block';
+    document.getElementById('admin-panel').style.display = isAdmin?'block':'none';
+    document.querySelector('.toggle-btn').textContent = isAdmin?'📺 Tampilan TV':'⚙️ Admin';
     if (isAdmin) {
       loadAdmin();
     } else {
       idleBuilt = false;
       videoJedaMode = false;
       idleIndex = 0;
-      if (idleTimer) { clearInterval(idleTimer); idleTimer = null; }
+      if (idleTimer) { clearInterval(idleTimer); idleTimer=null; }
       renderDisplay();
     }
   }
