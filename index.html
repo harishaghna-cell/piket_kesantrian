@@ -366,7 +366,7 @@
       document.querySelectorAll('.idle-video').forEach(el => { el.classList.remove('active'); el.pause(); el.currentTime=0; });
       setVideoMode(false);
       if (videoJedaTimer) clearTimeout(videoJedaTimer);
-      videoJedaTimer = setTimeout(() => { videoJedaMode=false; idleIndex=0; showIdleSlide(); }, 5*60*1000);
+      videoJedaTimer = setTimeout(() => { videoJedaMode=false; idleIndex=0; showIdleSlide(); }, 2*60*1000);
       return;
     }
 
