@@ -555,19 +555,20 @@
     const now = new Date();
     const timeStr = now.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
     const dateStr = now.toLocaleDateString('id-ID', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
-    const isVideoActive = !!document.querySelector('.idle-video.active');
+    const activeVid = document.querySelector('.idle-video.active');
+    const isVideoActive = !!activeVid && !activeVid.paused && !videoJedaMode;
 
-    const cl = document.getElementById('idle-clock');
-    const dt = document.getElementById('idle-date');
     const content = document.getElementById('idle-content');
     const overlay = document.querySelector('.idle-overlay');
     const videoOverlay = document.getElementById('video-overlay');
     const logo = document.querySelector('.idle-logo');
+    const cl = document.getElementById('idle-clock');
+    const dt = document.getElementById('idle-date');
 
-    if (isVideoActive && !videoJedaMode) {
-      if (content) content.style.display = 'none';
+    if (isVideoActive) {
+      if (content) content.style.cssText = 'display:none!important';
       if (overlay) overlay.style.opacity = '0';
-      if (logo) logo.style.display = 'none';
+      if (logo) logo.style.cssText = 'display:none!important';
       if (videoOverlay) {
         videoOverlay.style.display = 'flex';
         const vClock = document.getElementById('video-clock');
@@ -576,9 +577,9 @@
         if (vDate) vDate.textContent = dateStr;
       }
     } else {
-      if (content) content.style.display = 'flex';
+      if (content) content.style.cssText = '';
       if (overlay) overlay.style.opacity = '1';
-      if (logo) logo.style.display = '';
+      if (logo) logo.style.cssText = '';
       if (videoOverlay) videoOverlay.style.display = 'none';
       if (cl) cl.textContent = timeStr;
       if (dt) dt.textContent = dateStr;
@@ -807,7 +808,15 @@
     document.getElementById('display-panel').style.display = isAdmin ? 'none' : 'block';
     document.getElementById('admin-panel').style.display = isAdmin ? 'block' : 'none';
     document.querySelector('.toggle-btn').textContent = isAdmin ? '📺 Tampilan TV' : '⚙️ Admin';
-    if (isAdmin) { idleBuilt = false; loadAdmin(); }
+    if (isAdmin) {
+      loadAdmin();
+    } else {
+      idleBuilt = false;
+      videoJedaMode = false;
+      idleIndex = 0;
+      if (idleTimer) { clearInterval(idleTimer); idleTimer = null; }
+      renderDisplay();
+    }
   }
 
   loadDisplay().then(() => {
