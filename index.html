@@ -427,7 +427,6 @@
     const allQuotes = quotes;
     if (!allVideos.length && !allQuotes.length) return;
 
-    // Semua video sudah diputar, masuk mode jeda
     if (idleIndex >= allVideos.length + allQuotes.length && allVideos.length > 0) {
       videoJedaMode = true;
       document.querySelectorAll('.idle-video').forEach(el => {
@@ -435,8 +434,12 @@
       });
       const content = document.getElementById('idle-content');
       const overlay = document.querySelector('.idle-overlay');
-      if (content) content.style.display = 'flex';
+      const logo = document.querySelector('.idle-logo');
+      const videoOverlay = document.getElementById('video-overlay');
+      if (content) content.setAttribute('style', '');
+      if (logo) logo.setAttribute('style', '');
       if (overlay) overlay.style.opacity = '1';
+      if (videoOverlay) videoOverlay.style.display = 'none';
       if (videoJedaTimer) clearTimeout(videoJedaTimer);
       videoJedaTimer = setTimeout(() => {
         videoJedaMode = false;
@@ -447,7 +450,6 @@
     }
 
     if (idleIndex < allVideos.length) {
-      const v = allVideos[idleIndex];
       document.querySelectorAll('.idle-video').forEach((el, i) => {
         const active = i === idleIndex;
         el.classList.toggle('active', active);
@@ -456,8 +458,12 @@
       });
       const content = document.getElementById('idle-content');
       const overlay = document.querySelector('.idle-overlay');
-      if (content) content.style.display = 'none';
+      const logo = document.querySelector('.idle-logo');
+      const videoOverlay = document.getElementById('video-overlay');
+      if (content) content.setAttribute('style', 'display:none!important');
+      if (logo) logo.setAttribute('style', 'display:none!important');
       if (overlay) overlay.style.opacity = '0';
+      if (videoOverlay) videoOverlay.style.display = 'flex';
       idleIndex++;
     } else if (allQuotes.length) {
       document.querySelectorAll('.idle-video').forEach(el => {
@@ -465,16 +471,30 @@
       });
       const content = document.getElementById('idle-content');
       const overlay = document.querySelector('.idle-overlay');
-      if (content) content.style.display = 'flex';
+      const logo = document.querySelector('.idle-logo');
+      const videoOverlay = document.getElementById('video-overlay');
+      if (content) content.setAttribute('style', '');
+      if (logo) logo.setAttribute('style', '');
       if (overlay) overlay.style.opacity = '1';
+      if (videoOverlay) videoOverlay.style.display = 'none';
       const qi = (idleIndex - allVideos.length) % allQuotes.length;
       const q = allQuotes[qi];
       const qEl = document.getElementById('idle-quote');
       if (qEl) qEl.innerHTML = `<div class="idle-quote-text">"${q.text}"</div>${q.author ? `<div class="idle-quote-author">— ${q.author}</div>` : ''}`;
       idleIndex++;
     } else {
-      idleIndex = 0;
       videoJedaMode = true;
+      document.querySelectorAll('.idle-video').forEach(el => {
+        el.classList.remove('active'); el.pause(); el.currentTime = 0;
+      });
+      const content = document.getElementById('idle-content');
+      const overlay = document.querySelector('.idle-overlay');
+      const logo = document.querySelector('.idle-logo');
+      const videoOverlay = document.getElementById('video-overlay');
+      if (content) content.setAttribute('style', '');
+      if (logo) logo.setAttribute('style', '');
+      if (overlay) overlay.style.opacity = '1';
+      if (videoOverlay) videoOverlay.style.display = 'none';
       if (videoJedaTimer) clearTimeout(videoJedaTimer);
       videoJedaTimer = setTimeout(() => {
         videoJedaMode = false;
@@ -482,7 +502,7 @@
         showIdleSlide();
       }, 5 * 60 * 1000);
     }
-  };
+  }
     idleTimer = setInterval(() => {
       const activeVid = document.querySelector('.idle-video.active');
       if (!activeVid || activeVid.ended || activeVid.paused) {
@@ -496,23 +516,21 @@
 
     const allVideos = videos;
     const allQuotes = quotes;
-
     if (!allVideos.length && !allQuotes.length) return;
 
-    const videosDone = idleIndex >= allVideos.length && allVideos.length > 0;
-
-    if (videosDone) {
+    if (idleIndex >= allVideos.length + allQuotes.length && allVideos.length > 0) {
       videoJedaMode = true;
       document.querySelectorAll('.idle-video').forEach(el => {
-        el.classList.remove('active');
-        el.pause();
-        el.currentTime = 0;
+        el.classList.remove('active'); el.pause(); el.currentTime = 0;
       });
       const content = document.getElementById('idle-content');
       const overlay = document.querySelector('.idle-overlay');
-      if (content) content.style.display = 'flex';
+      const logo = document.querySelector('.idle-logo');
+      const videoOverlay = document.getElementById('video-overlay');
+      if (content) content.setAttribute('style', '');
+      if (logo) logo.setAttribute('style', '');
       if (overlay) overlay.style.opacity = '1';
-
+      if (videoOverlay) videoOverlay.style.display = 'none';
       if (videoJedaTimer) clearTimeout(videoJedaTimer);
       videoJedaTimer = setTimeout(() => {
         videoJedaMode = false;
@@ -523,17 +541,20 @@
     }
 
     if (idleIndex < allVideos.length) {
-      const v = allVideos[idleIndex];
       document.querySelectorAll('.idle-video').forEach((el, i) => {
-        const active = allVideos[i]?.url === v.url;
+        const active = i === idleIndex;
         el.classList.toggle('active', active);
         if (active) { el.muted = false; el.play().catch(()=>{}); }
         else { el.pause(); el.currentTime = 0; }
       });
       const content = document.getElementById('idle-content');
       const overlay = document.querySelector('.idle-overlay');
-      if (content) content.style.display = 'none';
+      const logo = document.querySelector('.idle-logo');
+      const videoOverlay = document.getElementById('video-overlay');
+      if (content) content.setAttribute('style', 'display:none!important');
+      if (logo) logo.setAttribute('style', 'display:none!important');
       if (overlay) overlay.style.opacity = '0';
+      if (videoOverlay) videoOverlay.style.display = 'flex';
       idleIndex++;
     } else if (allQuotes.length) {
       document.querySelectorAll('.idle-video').forEach(el => {
@@ -541,16 +562,38 @@
       });
       const content = document.getElementById('idle-content');
       const overlay = document.querySelector('.idle-overlay');
-      if (content) content.style.display = 'flex';
+      const logo = document.querySelector('.idle-logo');
+      const videoOverlay = document.getElementById('video-overlay');
+      if (content) content.setAttribute('style', '');
+      if (logo) logo.setAttribute('style', '');
       if (overlay) overlay.style.opacity = '1';
+      if (videoOverlay) videoOverlay.style.display = 'none';
       const qi = (idleIndex - allVideos.length) % allQuotes.length;
       const q = allQuotes[qi];
       const qEl = document.getElementById('idle-quote');
       if (qEl) qEl.innerHTML = `<div class="idle-quote-text">"${q.text}"</div>${q.author ? `<div class="idle-quote-author">— ${q.author}</div>` : ''}`;
       idleIndex++;
+    } else {
+      videoJedaMode = true;
+      document.querySelectorAll('.idle-video').forEach(el => {
+        el.classList.remove('active'); el.pause(); el.currentTime = 0;
+      });
+      const content = document.getElementById('idle-content');
+      const overlay = document.querySelector('.idle-overlay');
+      const logo = document.querySelector('.idle-logo');
+      const videoOverlay = document.getElementById('video-overlay');
+      if (content) content.setAttribute('style', '');
+      if (logo) logo.setAttribute('style', '');
+      if (overlay) overlay.style.opacity = '1';
+      if (videoOverlay) videoOverlay.style.display = 'none';
+      if (videoJedaTimer) clearTimeout(videoJedaTimer);
+      videoJedaTimer = setTimeout(() => {
+        videoJedaMode = false;
+        idleIndex = 0;
+        showIdleSlide();
+      }, 5 * 60 * 1000);
     }
   }
-
   function updateIdleClock() {
     const now = new Date();
     const timeStr = now.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
